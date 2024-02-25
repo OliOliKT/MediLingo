@@ -38,3 +38,17 @@ Frontend has a folder with the app name: MediLingo. Move into "MediLingo" app fo
  - **npm run start -- --reset-cache:**	Reset the Metro Bundler's cache.
  - **npx react-native info:**	Display information about your React Native environment.
  - **ctrl + c:**	Stop server from runnning
+
+*Create new React Native app:*
+ - Open folder in Visual Studio Code > Open a terminal
+ - Install node.js: install node // node -v
+ - Install Node Packet Manager: install npm // npm -v
+ - Install Expo: npm install -g expo-cli
+ - Create Expo app called "hello-world": expo init hello-world
+ - Choose template, blank or tabs
+ - Move into "hello-world" app folder: cd hello-world
+ - From here, you can begin using commands as seen below.
+ - In order to set up testing properly, create a .watchmanconfig file in the root folder of the app project, that contains the following:
+   <img width="211" alt="image" src="https://github.com/OliOliKT/MediLingo/assets/61165499/d4a146ed-382c-4595-bd4c-e9264ee9144e">
+
+
