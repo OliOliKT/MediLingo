@@ -64,3 +64,15 @@ print(lemmatized_tokens)
 number_of_elements = len(lemmatized_tokens)
 print(number_of_elements)
 # %%
+
+# TODO:
+# Set up MLFlow
+
+# TODO:
+# NLP models
+
+#%%
+from transformers import GPT2Model, GPT2Tokenizer
+# %%
+pipeline(task="sentiment-analysis")("hi i love this")
+# %%
