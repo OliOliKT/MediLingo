@@ -67,12 +67,51 @@ print(number_of_elements)
 
 # TODO:
 # Set up MLFlow
+#define metrics to conduct experiements on
+#save the best model
 
 # TODO:
-# NLP models
+# Train a GPT model on ENG
+# Train a GPT model on UKR
+# Train a GPT model on DA
+
+# TODO: 
+# Train a BERT model on ENG
+# Train a BERT model on UKR
+# Train a BERT model on DA
+
+# TODO: 
+# Train a T5 model on ENG
+# Train a T5 model on UKR
+# Train a T5 model on DA
+
+# T5 model - DA - UKR
+
+## input --> "har du diabetes" 
+## Whisper --> "har du diabetes" --> FT model --> "Do you have any KP"
+
 
 #%%
 from transformers import GPT2Model, GPT2Tokenizer
 # %%
-pipeline(task="sentiment-analysis")("hi i love this")
-# %%
+
+#preprocess data
+#create pipeline
+#different huggingface libs
+#model --> decode 
+
+## PROTOTYPE TESTING
+
+## Frontend (React App)
+    ## http POST request --> backend
+## Backend (REST-API)
+    ## POST request --> S2T (whisper)
+    ## whisper --> string object
+    ## fine-tuned model machine translation --> "nastrovia"
+    ## POST request --> frontend
+
+## fetch POST request from backend
+## Display on app
+
+
+
