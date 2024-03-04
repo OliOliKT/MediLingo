@@ -11,7 +11,7 @@ def csv_to_jsonl(input,output):
     csv_file = pd.read_csv(input)
     
     chatCompletion = []
-    for index, row in csv_file.iterrows():
+    for idx, row in csv_file.iterrows():
         messages = []
         messages.append({"role": "system", "content": "Translating from Danish to Ukrainian for medical purposes"})
         messages.append({"role": "user", "content": row["danish"]})
