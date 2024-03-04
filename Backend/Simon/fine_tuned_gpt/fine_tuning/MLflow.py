@@ -62,9 +62,9 @@ for model_id in FT_model_ids:
             ]
         )
         
-        generated_translation = completion.choices[0].message.content #generated sentence
-        reference_translation = ukranian_radiograph_sentences[danish_radiograph_sentences.index(sentence)] #correct translation for the sentence
-
+        generated_translation = completion.choices[0].message.content #generated translated sentence
+        reference_translation = ukranian_radiograph_sentences[danish_radiograph_sentences.index(sentence)] #finding the correct ukraninan translation for the sentence
+        
         bleu = sentence_bleu([reference_translation.split()], generated_translation.split())
 
         meteor = meteor_score([reference_translation], generated_translation)
