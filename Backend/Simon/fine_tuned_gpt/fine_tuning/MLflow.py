@@ -3,8 +3,9 @@ from nltk.translate.bleu_score import sentence_bleu
 from nltk.translate.meteor_score import meteor_score
 from openai import OpenAI
 
-API_KEY = "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"
-
+with open("key.txt", 'r') as key:
+  API_KEY = key.read()
+  
 client = OpenAI(api_key=API_KEY)
 
 interviewOnly = ""

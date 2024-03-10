@@ -5,7 +5,7 @@ import tiktoken
 import numpy as np
 from collections import defaultdict
 
-data_path = "fine_tuning/testset.jsonl"
+data_path = "training_set.jsonl"
 
 # Load the dataset
 with open(data_path, 'r', encoding='utf-8') as f:
@@ -131,3 +131,4 @@ n_billing_tokens_in_dataset = sum(min(MAX_TOKENS_PER_EXAMPLE, length) for length
 print(f"Dataset has ~{n_billing_tokens_in_dataset} tokens that will be charged for during training")
 print(f"By default, you'll train for {n_epochs} epochs on this dataset")
 print(f"By default, you'll be charged for ~{n_epochs * n_billing_tokens_in_dataset} tokens")
+# %%
