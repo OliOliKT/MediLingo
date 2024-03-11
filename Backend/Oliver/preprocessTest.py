@@ -15,6 +15,8 @@ def read_docx(file_path):
 
 current_directory = os.path.dirname(__file__)
 file_name = "merged_transcriptions.docx"
+
+file_name = "../preprocess/filename.txt"
 file_path = os.path.join(current_directory, file_name)
 text = read_docx(file_path)
 
