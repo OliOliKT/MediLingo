@@ -1,9 +1,15 @@
+import path
 import sounddevice as sd
 from pydub import AudioSegment
 from openai import OpenAI
 import os
 
-def record_audio(filename, duration=5, sample_rate=44100, channels=1):
+with open("key.txt", 'r') as key_file:
+    API_KEY = key_file.read().strip()
+
+client = OpenAI(api_key=API_KEY)
+
+def recordAudio(filename, duration=5, sample_rate=44100, channels=1):
     
     print("\nOptager!")
     
@@ -23,11 +29,6 @@ def record_audio(filename, duration=5, sample_rate=44100, channels=1):
 
 def transcribeAndTranslate(audio_file):
     
-    with open("key.txt", 'r') as key_file:
-        API_KEY = key_file.read().strip()
-
-    client = OpenAI(api_key=API_KEY)
-    
     audio = open(audio_file, "rb")
     
     transcription = client.audio.transcriptions.create(
@@ -45,12 +46,12 @@ def transcribeAndTranslate(audio_file):
     )
     
     return transcription, completion.choices[0].message.content
-    
+
 if __name__ == "__main__":
     
     filename = "mediLingo.mp3"
     
-    record_audio(filename, duration=5)
+    recordAudio(filename, duration=5)
 
     transcription, translation = transcribeAndTranslate(filename)
     

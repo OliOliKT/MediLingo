@@ -49,6 +49,9 @@ FT_model_ids = [
     ""
 ]          
 
+
+model_scores = {}
+
 #calculating combined score (BLEU + METEOR) for each model
 for model_id in FT_model_ids:
     
@@ -73,4 +76,9 @@ for model_id in FT_model_ids:
         total_score.append(bleu+meteor)
     
     print("\nTotal score for " + model_id + ": " + str(total_score))
+    
+    #saving model in the dictionary
+    
+    model_scores[model_id] = sum(total_score)
 
+    
