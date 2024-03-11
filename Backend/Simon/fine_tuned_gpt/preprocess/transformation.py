@@ -6,39 +6,58 @@ from sklearn.model_selection import train_test_split
 def excel_to_csv(input, output):
 
     df = pd.read_excel(input).to_csv(output,index=False,header=["danish", "english", "ukranian"])
+
+#excel_to_csv("original_dataset.xlsx", "original_dataset.csv")
+
+#%%
+
+def csv_to_jsonl(input,output):
     
+    df = pd.read_csv(input)
+    
+    jsonl = []
+    for idx, row in df.iterrows():
+        messages = []
+        messages.append({"role": "system", "content": "Translating from Danish to Ukrainian for medical purposes"})
+        messages.append({"role": "user", "content": row["danish"]})
+        messages.append({"role": "assistant", "content": row["ukranian"]})
+        jsonl.append({"messages": messages})
+
+    with open(output, 'w') as f:
+        for sentence in jsonl:
+            f.write(json.dumps(sentence, ensure_ascii=False) + '\n')
+            
+#csv_to_jsonl("final.csv","final.jsonl")
+
+#%%
+
+def combine_csv(file1, file2, output_file):
+
+    df1 = pd.read_csv(file1)
+    df2 = pd.read_csv(file2)
+    
+    combined_df = pd.concat([df1, df2], ignore_index=True)
+    
+    combined_df.to_csv(output_file, index=False)
+
+combine_csv("orginal_dataset.csv", "augmented.csv","final.csv")
 
 #%%
 def get_dfs():
     
-    df = pd.read_csv("dataset.csv")
+    data = []
+    with open("/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/preprocess/final.jsonl", 'r') as f:
+        for line in f:
+            data.append(json.loads(line))
+            
+    training, validation = train_test_split(data, train_size=0.8,shuffle=False)
     
-    training, validation = train_test_split(df, train_size=0.8,shuffle=False)
-    
-    trainingSet = []
-    for idx, row in training.iterrows():
-        messages = []
-        messages.append({"role": "system", "content": "Translating from Danish to Ukrainian for medical purposes"})
-        messages.append({"role": "user", "content": row["danish"]})
-        messages.append({"role": "assistant", "content": row["ukranian"]})
-        trainingSet.append({"messages": messages})
-
-    validationSet = []
-    for idx, row in validation.iterrows():
-        messages = []
-        messages.append({"role": "system", "content": "Translating from Danish to Ukrainian for medical purposes"})
-        messages.append({"role": "user", "content": row["danish"]})
-        messages.append({"role": "assistant", "content": row["ukranian"]})
-        validationSet.append({"messages": messages})
-    
-    with open("training_set.jsonl", 'w') as f:
-        for sentence in trainingSet:
-            f.write(json.dumps(sentence, ensure_ascii=False) + '\n')
+    with open("training.jsonl", 'w') as f:
+        for item in training:
+            f.write(json.dumps(item, ensure_ascii=False) + '\n')
 
     with open("validation_set.jsonl", 'w') as f:
-        for sentence in validationSet:
-            f.write(json.dumps(sentence, ensure_ascii=False) + '\n')
+        for item in validation:
+            f.write(json.dumps(item, ensure_ascii=False) + '\n')
 
 get_dfs()
-
-# %%

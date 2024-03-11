@@ -1,6 +1,7 @@
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
-from textattack.augmentation import EmbeddingAugmenter
+from textattack.augmentation import EmbeddingAugmenter, CharSwapAugmenter
 import pandas as pd
+import json
 
 #SOURCE LANGUAGE
 DA_EN_tokenizer = AutoTokenizer.from_pretrained("Helsinki-NLP/opus-mt-da-en")
@@ -16,8 +17,8 @@ UK_EN_model = AutoModelForSeq2SeqLM.from_pretrained("Helsinki-NLP/opus-mt-uk-en"
 EN_UK_tokenizer = AutoTokenizer.from_pretrained("Helsinki-NLP/opus-mt-en-uk")
 EN_UK_model = AutoModelForSeq2SeqLM.from_pretrained("Helsinki-NLP/opus-mt-en-uk")
 
-augmenter = EmbeddingAugmenter()
-
+EM_augmenter = EmbeddingAugmenter()
+CS_augmenter = CharSwapAugmenter()
 
 ######### augmentation on the JSON file
 
@@ -57,10 +58,59 @@ def backtranslation_ukrainian(sentence):
 
     return backtranslated_sentence
 
+
+def load_jsonlFile(path):
+    lines = []
+    with open(path, 'r', encoding="utf-8") as file:
+        for line in file:
+            lines.append(json.loads(line))
+    return lines
+
+def write_jsonlFile(file ,path):
+    with open(path, 'a', encoding='utf-8') as f:
+        f.write(json.dumps(file, ensure_ascii=False) + '\n')
+
+def augmentation_BackTrans(input_file, output_file):
+    dataset = load_jsonlFile(input_file)
+
+    for obj in dataset:
+        original_messages = obj["messages"]
+        augmented_messages = []
+
+        for message in original_messages:
+            if message["role"] == "user":
+                danish_text = message["content"]
+                backtranslated_danish = backtranslation_danish(danish_text)
+                message["content"] = backtranslated_danish
+
+            augmented_messages.append(message)
+
+        augmented_obj = {"messages": augmented_messages}
+        write_jsonlFile(augmented_obj, output_file)
+
+def CharSwap(input_file, output_file):
+    dataset = load_jsonlFile(input_file)
+
+    for obj in dataset:
+        original_messages = obj["messages"]
+        augmented_messages = []
+
+        for message in original_messages:
+            if message["role"] == "user":
+                danish_text = message["content"]
+                backtranslated_danish = CS_augmenter.augment(danish_text)
+                message["content"] = backtranslated_danish
+            elif message["role"] == "assistant":
+                ukrainian_text = message["content"]
+                backtranslated_ukrainian = CS_augmenter.augment(ukrainian_text)
+                message["content"] = backtranslated_ukrainian
+
+            augmented_messages.append(message)
+
+        augmented_obj = {"messages": augmented_messages}
+        write_jsonlFile(augmented_obj, output_file)
+
 ######### augmentation on csv file! 
-def embedding_replacement(sentence):
-    augmented_sentences = augmenter.augment(sentence)
-    return augmented_sentences
 
 def english_to_danish(sentence):
     
@@ -76,7 +126,7 @@ def embedding_and_translate(dataset):
     df = pd.read_csv(dataset)
     rows = []
     for _, row in df.iterrows():
-        embedded = embedding_replacement(row["english"])
+        embedded = EM_augmenter.augment(row["english"])
         danish_translation = english_to_danish(embedded)
         ukranian= row["ukranian"]
         rows.append((danish_translation, embedded[0], ukranian))
@@ -84,5 +134,4 @@ def embedding_and_translate(dataset):
     new_df = pd.DataFrame(rows, columns=["danish", "english", "ukrainian"])
 
     new_df.to_csv("augmented.csv",index=False)
-
-
+    
