@@ -3,61 +3,43 @@ from textattack.augmentation import EmbeddingAugmenter, CharSwapAugmenter
 import pandas as pd
 import json
 
-#SOURCE LANGUAGE
-DA_EN_tokenizer = AutoTokenizer.from_pretrained("Helsinki-NLP/opus-mt-da-en")
-DA_EN_model = AutoModelForSeq2SeqLM.from_pretrained("Helsinki-NLP/opus-mt-da-en")
+#BACKTRANSLATION - DANISH to GERMAN toDANISH
+DA_DE_tokenizer = AutoTokenizer.from_pretrained("Helsinki-NLP/opus-mt-da-de")
+DA_DE_model = AutoModelForSeq2SeqLM.from_pretrained("Helsinki-NLP/opus-mt-da-de")
+
+DE_DA_tokenizer = AutoTokenizer.from_pretrained("Helsinki-NLP/opus-mt-de-da")
+DE_DA_model = AutoModelForSeq2SeqLM.from_pretrained("Helsinki-NLP/opus-mt-de-da")
+
+#CharSwap
+CS_augmenter = CharSwapAugmenter()
+
+#EMBEDDING - ENGLISH to DANISH
 
 EN_DA_tokenizer = AutoTokenizer.from_pretrained("Helsinki-NLP/opus-mt-en-da")
 EN_DA_model = AutoModelForSeq2SeqLM.from_pretrained("Helsinki-NLP/opus-mt-en-da")
-
-#TARGET LANGUAGE
-UK_EN_tokenizer = AutoTokenizer.from_pretrained("Helsinki-NLP/opus-mt-uk-en")
-UK_EN_model = AutoModelForSeq2SeqLM.from_pretrained("Helsinki-NLP/opus-mt-uk-en")
-
-EN_UK_tokenizer = AutoTokenizer.from_pretrained("Helsinki-NLP/opus-mt-en-uk")
-EN_UK_model = AutoModelForSeq2SeqLM.from_pretrained("Helsinki-NLP/opus-mt-en-uk")
-
 EM_augmenter = EmbeddingAugmenter()
-CS_augmenter = CharSwapAugmenter()
 
 ######### augmentation on the JSON file
 
 def backtranslation_danish(sentence):
 
-    inputs_da = DA_EN_tokenizer(sentence, return_tensors="pt")
+    #danish to german 
+    
+    inputs_da = DA_DE_tokenizer(sentence, return_tensors="pt")
 
-    translation_ids_da = DA_EN_model.generate(**inputs_da)
+    translation_ids_da = DA_DE_model.generate(**inputs_da)
 
-    translated_sentence = DA_EN_tokenizer.decode(translation_ids_da[0], skip_special_tokens=True)
+    translated_sentence = DA_DE_tokenizer.decode(translation_ids_da[0], skip_special_tokens=True)
     
-    #now back to danish
+    #now back from german to danish
     
-    inputs_en = EN_DA_tokenizer(translated_sentence, return_tensors="pt")
+    inputs_en = DE_DA_tokenizer(translated_sentence, return_tensors="pt")
     
-    translation_ids_da = EN_DA_model.generate(**inputs_en)
+    translation_ids_da = DE_DA_model.generate(**inputs_en)
     
-    backtranslated_sentence = EN_DA_tokenizer.decode(translation_ids_da[0], skip_special_tokens=True)
-
-    return backtranslated_sentence
-
-def backtranslation_ukrainian(sentence):
-    
-    inputs_UK = UK_EN_tokenizer(sentence, return_tensors="pt")
-
-    translation_ids_UK = UK_EN_model.generate(**inputs_UK)
-
-    translated_sentence = UK_EN_tokenizer.decode(translation_ids_UK[0], skip_special_tokens=True)
-    
-    #now back to ukranian
-    
-    inputs_en = EN_UK_tokenizer(translated_sentence, return_tensors="pt")
-    
-    translation_ids_en = EN_UK_model.generate(**inputs_en)
-    
-    backtranslated_sentence = EN_UK_tokenizer.decode(translation_ids_en[0], skip_special_tokens=True)
+    backtranslated_sentence = DE_DA_tokenizer.decode(translation_ids_da[0], skip_special_tokens=True)
 
     return backtranslated_sentence
-
 
 def load_jsonlFile(path):
     lines = []
@@ -113,6 +95,7 @@ def CharSwap(input_file, output_file):
 ######### augmentation on csv file! 
 
 def english_to_danish(sentence):
+    
     
     inputs_en = EN_DA_tokenizer(sentence, return_tensors="pt")
     
