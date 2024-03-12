@@ -180,6 +180,7 @@ FT_model_ids = [
 model_scores = {}
 
 #calculating combined score (BLEU + METEOR) for each model
+
 for model_id in FT_model_ids:
     
     total_scores = {"MR": 0, "CT": 0, "UL": 0}
@@ -213,4 +214,6 @@ for model_id in FT_model_ids:
     
     model_scores[model_id] = total_scores
 
+print("model dictionary:")
+print(model_scores)
     
