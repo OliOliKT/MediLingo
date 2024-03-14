@@ -7,7 +7,7 @@ def excel_to_csv(input, output):
 
     df = pd.read_excel(input).to_csv(output,index=False,header=["danish", "english", "ukranian"])
 
-#excel_to_csv("original_dataset.xlsx", "original_dataset.csv")
+excel_to_csv("/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/preprocess/datasets/interview1.xlsx", "interview1.csv")
 
 #%%
 
@@ -27,7 +27,7 @@ def csv_to_jsonl(input,output):
         for sentence in jsonl:
             f.write(json.dumps(sentence, ensure_ascii=False) + '\n')
             
-#csv_to_jsonl("final.csv","final.jsonl")
+csv_to_jsonl("/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/preprocess/datasets/interview_all.csv","interview_all.jsonl")
 
 #%%
 
@@ -40,7 +40,7 @@ def combine_csv(file1, file2, output_file):
     
     combined_df.to_csv(output_file, index=False)
 
-combine_csv("orginal_dataset.csv", "augmented.csv","final.csv")
+combine_csv("/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/preprocess/datasets/f_interview.csv", "/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/preprocess/datasets/interview3.csv","interview_all.csv")
 
 #%%
 def get_dfs():
