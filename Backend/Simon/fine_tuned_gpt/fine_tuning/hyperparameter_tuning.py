@@ -1,13 +1,15 @@
+#%%
 import itertools
 from nltk.translate.bleu_score import sentence_bleu
 from nltk.translate.meteor_score import meteor_score
+from nltk.tokenize import word_tokenize
 from openai import OpenAI
 
-with open("key.txt", 'r') as key:
+with open("/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/key.txt", 'r') as key:
   API_KEY = key.read()
   
 client = OpenAI(api_key=API_KEY)
-
+#%%
 interviewOnly = ""
 interviewAndQuestions = ""
 
@@ -36,7 +38,7 @@ for epoch, learning_rate, batch_size, dataset_id in hyperparameter_combinations:
         )
 
 #questions in our test-sample-set for each subdepartment          
-              
+#%%            
 danish_radiograph_sentences = {
     "MR": 
         ["Har du fået lavet kunstige led?",
@@ -172,10 +174,14 @@ ukranian_radiograph_sentences = {
         ]
 }
 
+#%%
 #all the fine-tuned models generated from the grid-search like experiment
 FT_model_ids = [
-    ""
+    "ft:gpt-3.5-turbo-0125:personal:medilingo:8z7ujSsh"
 ]          
+
+model="ft:gpt-3.5-turbo-0125:personal:medilingo:8z7ujSsh",
+
 
 model_scores = {}
 
@@ -200,13 +206,19 @@ for model_id in FT_model_ids:
             )
             
             generated_translation = completion.choices[0].message.content #generated translated sentence
-            reference_translation = ukranian_radiograph_sentences[danish_radiograph_sentences.index(sentence)] #finding the correct ukraninan translation for the sentence
             
-            bleu = sentence_bleu([reference_translation.split()], generated_translation.split())
+            tokenized_hypothesis = word_tokenize(generated_translation)
+            
+            index = danish_radiograph_sentences[sub_department].index(sentence)
+            
+            # Finding the corresponding Ukrainian translation using the index
+            reference_translation = ukranian_radiograph_sentences[sub_department][index] #finding the correct ukraninan translation for the sentence
+            
+            #bleu = sentence_bleu([reference_translation.split()], generated_translation.split())
 
-            meteor = meteor_score([reference_translation], generated_translation)
+            meteor = meteor_score([reference_translation.split()], tokenized_hypothesis)
 
-            totalDepartmentScore += (bleu+meteor)
+            totalDepartmentScore += (meteor)
         
         total_scores[sub_department] = totalDepartmentScore
     
@@ -217,3 +229,5 @@ for model_id in FT_model_ids:
 print("model dictionary:")
 print(model_scores)
     
+
+# %%

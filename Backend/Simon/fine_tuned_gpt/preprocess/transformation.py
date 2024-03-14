@@ -27,7 +27,7 @@ def csv_to_jsonl(input,output):
         for sentence in jsonl:
             f.write(json.dumps(sentence, ensure_ascii=False) + '\n')
             
-csv_to_jsonl("/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/preprocess/datasets/interview_all.csv","interview_all.jsonl")
+csv_to_jsonl("/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/preprocess/lol.csv","lol.jsonl")
 
 #%%
 

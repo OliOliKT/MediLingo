@@ -1,6 +1,6 @@
 #%%
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
-from textattack.augmentation import EmbeddingAugmenter, CharSwapAugmenter, EasyDataAugmenter, CheckListAugmenter
+from textattack.augmentation import EmbeddingAugmenter, CharSwapAugmenter, EasyDataAugmenter, CheckListAugmenter, WordNetAugmenter
 import pandas as pd
 import json
 import random
@@ -130,30 +130,6 @@ def CharSwap(input_file, output_file):
 ######### augmentation on csv file! 
 #%%
 
-def remove_stopword(sentence):
-    # Tokenize the sentence into words
-    words = word_tokenize(sentence)
-
-    # Get the set of English stopwords
-    english_stopwords = set(stopwords.words('english'))
-
-    # Find the stopwords present in the sentence
-    stopwords_in_sentence = [word for word in words if word.lower() in english_stopwords]
-
-    if stopwords_in_sentence:
-        # Randomly select a stopword to remove
-        stopword_to_remove = random.choice(stopwords_in_sentence)
-
-        # Remove the selected stopword
-        words_without_stopword = [word for word in words if word != stopword_to_remove]
-
-        # Reconstruct the sentence
-        augmented_sentence = ' '.join(words_without_stopword)
-    else:
-        # If no stopwords found, return the original sentence
-        augmented_sentence = sentence
-
-    return augmented_sentence
     
 def english_to_danish(sentence):
     
@@ -165,21 +141,46 @@ def english_to_danish(sentence):
 
     return synonym_sentence
 
+
+from nlpaug.util import Action
+import nlpaug.augmenter.word as naw
+import random
+
+def english_to_danish(sentence):
+    inputs_en = EN_DA_tokenizer(sentence, return_tensors="pt", padding=True, truncation=True)
+    translation_ids_da = EN_DA_model.generate(**inputs_en)
+    synonym_sentence = EN_DA_tokenizer.decode(translation_ids_da[0], skip_special_tokens=True)
+    return synonym_sentence
+
 def embedding_and_translate(dataset):
     df = pd.read_csv(dataset)
     rows = []
     for _, row in df.iterrows():
-        embedded = remove_stopword(row["english"])
-        danish_translation = english_to_danish(embedded)
-        ukranian= row["ukranian"]
-        rows.append((danish_translation, embedded, ukranian))
+        sentence = row["english"]
+
+        target = nltk.pos_tag(nltk.word_tokenize(sentence))
+
+        adjective = [word for word, pos in target if pos.startswith('JJ')]
+        verb = [word for word, pos in target if pos.startswith('VB')]
+
+        if adjective:
+            oneRandomAdjective = random.choice(adjective)
+            synonym = WordNetAugmenter().augment(oneRandomAdjective)
+            sentence = sentence.replace(oneRandomAdjective, synonym[0])
+        elif verb:
+            oneRandomVerb = random.choice(verb)
+            synonym = WordNetAugmenter().augment(oneRandomVerb)
+            sentence = sentence.replace(oneRandomVerb, synonym[0])
+        
+        danish_translation = english_to_danish(sentence)
+        ukranian = row["ukranian"]
+        rows.append((danish_translation, sentence, ukranian))
     
     new_df = pd.DataFrame(rows, columns=["danish", "english", "ukranian"])
+    new_df.to_csv("interview_embedded_augmented.csv", index=False)
 
-    new_df.to_csv("interview_stopword_augmented.csv",index=False)
-
-embedding_and_translate("/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/data_augmentation/Interview_dataset_augmented/interview_all.csv")   
-#augmentation_BackTrans("/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/data_augmentation/interview_dataset_augmented/lange.jsonl","interview_backTrans_DA_DE.jsonl")
+#embedding_and_translate("/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/data_augmentation/lol.csv")   
+augmentation_BackTrans("/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/data_augmentation/lol.jsonl","2_3000_total_backtranslated_DE_DA.jsonl")
 
 
 # %%
