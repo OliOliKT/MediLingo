@@ -6,7 +6,7 @@ export const colors = {
     },
     whites: {
       chineseSilver: "#C8C8C8",
-      silver: "#F4F4F4",
+      silver: "#E0E0E0",
       ghostWhite: "#FAFAFC",
     },
     blues: {
@@ -19,5 +19,6 @@ export const colors = {
       mediumAquamarine: "#7ADCC3",
       lightGreen: "#1CFCC4",
     },
+    fontColor: "#606060"
   };
   
