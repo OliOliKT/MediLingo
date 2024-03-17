@@ -46,31 +46,6 @@ def german_to_danish(sentence):
 ######### augmentation on the JSON file
 
 def backtranslation_danish(sentence):
-    # max_length = 512
-    
-    # # Check if the number of tokens in the sentence exceeds the maximum length
-    # number_of_tokens = DA_DE_tokenizer.tokenize(sentence)
-    
-    # if len(number_of_tokens) > max_length:
-    #     # Split the sentence into chunks
-    #     chunks = []
-    #     start = 0
-    #     while start < len(number_of_tokens):
-    #         chunks.append(number_of_tokens[start:start+max_length])
-    #         start += max_length
-        
-    #     # Translate each chunk separately
-    #     backtranslated_chunks = []
-    #     for chunk in chunks:
-    #         translated_sentence = danish_to_german(chunk)
-    #         backtranslated_chunk = german_to_danish(translated_sentence)
-    #         backtranslated_chunks.append(backtranslated_chunk)
-        
-    #     # Concatenate the backtranslated chunks
-    #     backtranslated_sentence = " ".join(backtranslated_chunks)
-    #     return backtranslated_sentence
-    # else:
-        # If the sentence doesn't exceed the maximum length, directly translate it
         translated_sentence = danish_to_german(sentence)
         backtranslated_sentence = german_to_danish(translated_sentence)
         return backtranslated_sentence
@@ -177,10 +152,10 @@ def embedding_and_translate(dataset):
         rows.append((danish_translation, sentence, ukranian))
     
     new_df = pd.DataFrame(rows, columns=["danish", "english", "ukranian"])
-    new_df.to_csv("interview_embedded_augmented.csv", index=False)
+    new_df.to_csv("/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/data_augmentation/Q_dataset_augmented/1_350_total_interview_synonym_new.csv", index=False)
 
-#embedding_and_translate("/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/data_augmentation/lol.csv")   
-augmentation_BackTrans("/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/data_augmentation/lol.jsonl","2_3000_total_backtranslated_DE_DA.jsonl")
+embedding_and_translate("/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/data_augmentation/original_interview.csv")   
+#augmentation_BackTrans("/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/data_augmentation/lol.jsonl","augmented_test.jsonl")
 
 
 # %%
