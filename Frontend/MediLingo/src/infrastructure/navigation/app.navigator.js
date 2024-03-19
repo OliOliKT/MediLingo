@@ -16,7 +16,7 @@ const TAB_ICON = {
   Introduction: "people",
   Prompts: "albums",
   Settings: "settings",
-  "History": "time",
+  History: "time",
 };
 
 const tabBarIcon =
@@ -29,7 +29,7 @@ const createScreenOptions = ({ route }) => {
   return {
     headerShown: false,
     tabBarIcon: tabBarIcon(iconName),
-    tabBarActiveTintColor: theme.colors.greens.cyanBlue,
+    tabBarActiveTintColor: theme.colors.blues.cyanBlue,
     tabBarInactiveTintColor: "gray",
   };
 };

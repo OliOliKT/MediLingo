@@ -1,3 +1,9 @@
+export const fonts = {
+    body: "System", 
+    heading: "Helvetica Neue", 
+    monospace: "Courier", 
+};
+
 export const fontWeights = {
     regular: 400,
     bold: 700,
