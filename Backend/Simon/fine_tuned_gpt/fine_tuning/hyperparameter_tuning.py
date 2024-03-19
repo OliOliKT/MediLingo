@@ -1,23 +1,37 @@
+#%%
 import itertools
 from nltk.translate.bleu_score import sentence_bleu
 from nltk.translate.meteor_score import meteor_score
+from nltk.tokenize import word_tokenize
 from openai import OpenAI
+import time
 
-with open("key.txt", 'r') as key:
+with open("/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/key.txt", 'r') as key:
   API_KEY = key.read()
   
 client = OpenAI(api_key=API_KEY)
+#%%
+interviewOnly_train = "/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/datasets/interviewOnly_train.jsonl"
+interviewOny_val = "/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/datasets/interviewOny_val.jsonl"
 
-interviewOnly = ""
-interviewAndQuestions = ""
+interviewAndQuestions_train = "/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/datasets/interviewAndQuestions_train.jsonl"
+interviewAndQuestions_val = "/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/datasets/interviewAndQuestions_val.jsonl"
 
-interviewOnly_id= client.files.create(file=open(interviewOnly, "rb"), purpose="fine-tune").id
-interviewAndQuestions_id = client.files.create(file=open(interviewAndQuestions, "rb"), purpose="fine-tune").id
+interviewOnly_train_id= client.files.create(file=open(interviewOnly_train, "rb"), purpose="fine-tune").id
+interviewOnly_val_id= client.files.create(file=open(interviewOnly_train, "rb"), purpose="fine-tune").id
+interviewAndQuestions_train_id = client.files.create(file=open(interviewAndQuestions_train, "rb"), purpose="fine-tune").id
+interviewAndQuestions_val_id = client.files.create(file=open(interviewAndQuestions_train, "rb"), purpose="fine-tune").id
 
+# epochs= [3, 4]
+# learning_rate_multiplier= [1.0,2.0]
+# batch_size= [32,64]
+# datasets = [[interviewOnly_train_id, interviewOnly_val_id], [interviewAndQuestions_train_id, interviewAndQuestions_val_id]]
+
+#experiment
 epochs= [3, 4]
 learning_rate_multiplier= [1.0,2.0]
 batch_size= [32,64]
-datasets = [interviewOnly_id, interviewAndQuestions_id]
+datasets = [[interviewOnly_train_id,interviewOnly_val_id], [interviewAndQuestions_train_id, interviewAndQuestions_val_id]]
 
 hyperparameter_combinations = itertools.product(epochs, learning_rate_multiplier, batch_size, datasets)
 
@@ -25,7 +39,8 @@ for epoch, learning_rate, batch_size, dataset_id in hyperparameter_combinations:
 
     #creating grid search over each hyperparameter combinations
     job = client.fine_tuning.jobs.create(
-            training_file=dataset_id,
+            training_file=dataset_id[0],
+            validation_file=dataset_id[1],
             model="gpt-3.5-turbo",
             suffix=f"E={epoch}_LR{learning_rate}_BS={batch_size}_ID={dataset_id}",
             hyperparameters={
@@ -34,9 +49,22 @@ for epoch, learning_rate, batch_size, dataset_id in hyperparameter_combinations:
                 "batch_size": batch_size
             }
         )
+    while True:
+        job_info = client.fine_tuning.jobs.retrieve(job.id)
+        if job_info.status == "succeeded":
+            print(f"Fine-tuning job {job.id} completed")
+            break
+        elif job_info.status == "failed":
+            print(f"Fine-tuning job {job.id} failed")
+            break
+        else:
+            print(job_info.status)
+            print(f"Fine-tuning job {job.id} still running...")
+            time.sleep(10) #wait 10 seconds before new check
+
 
 #questions in our test-sample-set for each subdepartment          
-              
+#%%            
 danish_radiograph_sentences = {
     "MR": 
         ["Har du fået lavet kunstige led?",
@@ -172,25 +200,30 @@ ukranian_radiograph_sentences = {
         ]
 }
 
+#%%
 #all the fine-tuned models generated from the grid-search like experiment
-FT_model_ids = [
-    ""
-]          
+FT_model_ids = {
+    "InterviewOnly": "ft:gpt-3.5-turbo-0125:personal:medilingo:8z7ujSsh"
+}
 
 model_scores = {}
 
 #calculating combined score (BLEU + METEOR) for each model
 
-for model_id in FT_model_ids:
+for model_name in FT_model_ids:
     
-    total_scores = {"MR": 0, "CT": 0, "UL": 0}
+    model_id = FT_model_ids[model_name]
+    total_scores = {}
+    count = 1 #index starts at 0, but the first sentence is = 1
     
+    total_model_score = 0
     for sub_department in danish_radiograph_sentences:
         phrases = danish_radiograph_sentences[sub_department]
         reference_translations = ukranian_radiograph_sentences[sub_department]
         
-        totalDepartmentScore = 0
-        for sentence in phrases:
+        total_bleu = 0
+        total_meteor = 0
+        for idx, sentence in enumerate(phrases):
             completion = client.chat.completions.create(
                 model=model_id,
                 messages=[
@@ -200,20 +233,74 @@ for model_id in FT_model_ids:
             )
             
             generated_translation = completion.choices[0].message.content #generated translated sentence
-            reference_translation = ukranian_radiograph_sentences[danish_radiograph_sentences.index(sentence)] #finding the correct ukraninan translation for the sentence
+                
+            # Finding the corresponding Ukrainian translation using the index
+            reference_translation = ukranian_radiograph_sentences[sub_department][idx-1] #finding the correct ukraninan translation for the sentence
             
             bleu = sentence_bleu([reference_translation.split()], generated_translation.split())
 
-            meteor = meteor_score([reference_translation], generated_translation)
-
-            totalDepartmentScore += (bleu+meteor)
+            meteor = meteor_score([reference_translation.split()], generated_translation.split())
+            
+            print("count: " + str(count) + " : " + sub_department)
+            count += 1
+            
+            total_bleu += bleu
+            total_meteor += meteor
+            total_model_score += (bleu + meteor)
         
-        total_scores[sub_department] = totalDepartmentScore
+        print("avg BLEU for: " + sub_department + " " + str((total_bleu/20)))
+        print("avg METEOR for: " + sub_department + " " + str((total_meteor/20)))
+            
+        total_scores[sub_department + "_avg_bleu: "] = (total_bleu/20)
+        total_scores[sub_department + "_avg_METEOR: "] = (total_meteor/20)
     
     #saving sub-department scores in a dictionary for the model
-    
-    model_scores[model_id] = total_scores
+    print(count)
+    total_scores["total_average_score(BLEU+METEOR)"] = (total_model_score/60)
+    model_scores[model_name] = total_scores
 
-print("model dictionary:")
+print("model performance: ")
 print(model_scores)
     
+
+# %%
+
+best_model = {
+    "InterviewOnly": "ft:gpt-3.5-turbo-0125:personal:medilingo:8z7ujSsh"
+}
+
+def generate_translations(model_id):
+    
+    translations = []
+    
+    for sub_department in danish_radiograph_sentences:
+        phrases = danish_radiograph_sentences[sub_department]
+
+        for idx, sentence in enumerate(phrases):
+            completion = client.chat.completions.create(
+                model=model_id,
+                messages=[
+                    {"role": "system", "content": "Translate from danish to ukranian"},
+                    {"role": "user", "content": sentence}
+                ]
+            )
+            
+            generated_translation = completion.choices[0].message.content #generated translated sentence
+            translations.append(f"{sentence} : {generated_translation}")
+        
+    return translations
+
+generated = generate_translations(best_model["InterviewOnly"])
+
+# %%
+import csv
+#save the table into a csv
+
+with open('interviewOnly.csv', 'w', newline='', encoding='utf-8') as file:
+    writer = csv.writer(file)
+    writer.writerow(['danish', 'generated_translation'])
+    for translation in generated:
+        danish, generated_translation = translation.split(":")
+        writer.writerow([danish.strip(), generated_translation.strip()])
+
+# %%

@@ -27,7 +27,7 @@ def csv_to_jsonl(input,output):
         for sentence in jsonl:
             f.write(json.dumps(sentence, ensure_ascii=False) + '\n')
             
-csv_to_jsonl("/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/preprocess/datasets/interview_all.csv","interview_all.jsonl")
+csv_to_jsonl("/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/preprocess/old_datasets/original_interview.csv","original_interview.jsonl")
 
 #%%
 
@@ -46,11 +46,11 @@ combine_csv("/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_
 def get_dfs():
     
     data = []
-    with open("/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/preprocess/final.jsonl", 'r') as f:
+    with open("/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/preprocess/interviewOnly.jsonl", 'r') as f:
         for line in f:
             data.append(json.loads(line))
             
-    training, validation = train_test_split(data, train_size=0.8,shuffle=False)
+    training, validation = train_test_split(data, train_size=0.8,shuffle=True)
     
     with open("training.jsonl", 'w') as f:
         for item in training:
@@ -61,3 +61,5 @@ def get_dfs():
             f.write(json.dumps(item, ensure_ascii=False) + '\n')
 
 get_dfs()
+
+# %%
