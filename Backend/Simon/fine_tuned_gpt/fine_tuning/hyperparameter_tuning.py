@@ -470,6 +470,11 @@ generate_translations(interviewOnly_id, "/Users/simono/Desktop/Thesis/Branches/M
 
 interviewOnly_id = "ft:gpt-3.5-turbo-0125:personal:medilingo:94Zh7J6M"
 generate_translations(interviewOnly_id, "/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/evaluation/evaluation_interviewAndQuestions_100percent.xlsx")
+#%%
+
+normal = "gpt-3.5-turbo"
+generate_translations(normal, "/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/evaluation_excelFiles/evaluation_stdGPT.xlsx")
+
 
 
 # %%
