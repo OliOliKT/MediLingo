@@ -1,0 +1,52 @@
+{
+    "interviewOnly": {
+        "model_id: ": "ft:gpt-3.5-turbo-0125:personal:medilingo:94UzywmL",
+        "validation_dataset_name": "interviewOnly_val.jsonl",
+        "validation_dataset_size": 281,
+        "BLEU_smoothing_function": "method2",
+        "total_bleu: ": 79.27849194581245,
+        "total_METEOR: ": 119.58050312355633,
+        "average_bleu: ": 0.282129864575845,
+        "average_METEOR: ": 0.42555339189877694,
+        "total_average_score(BLEU+METEOR)": 0.7076832564746219
+    },
+    "interviewAndQuestions_25p": {
+        "model_id: ": "ft:gpt-3.5-turbo-0125:personal:medilingo:94XbTe4o",
+        "validation_dataset_name": "interviewAndQuestions_val_25p.jsonl",
+        "validation_dataset_size": 436,
+        "BLEU_smoothing_function": "method2",
+        "total_bleu: ": 142.85540188257477,
+        "total_METEOR: ": 201.59141912733034,
+        "average_bleu: ": 0.32765000431783203,
+        "average_METEOR: ": 0.46236564020029897,
+        "total_average_score(BLEU+METEOR)": 0.7900156445181309
+    },
+    "interviewAndQuestions_50p": {
+        "model_id: ": "ft:gpt-3.5-turbo-0125:personal:medilingo:94WHfDoL",
+        "validation_dataset_name": "interviewAndQuestions_val_50p.jsonl",
+        "validation_dataset_size": 591,
+        "BLEU_smoothing_function": "method2",
+        "total_bleu: ": 222.38782268871128,
+        "total_METEOR: ": 310.99277721478194,
+        "average_bleu: ": 0.37629073212979913,
+        "average_METEOR: ": 0.5262145130537765,
+        "total_average_score(BLEU+METEOR)": 0.9025052451835757
+    },
+    "interviewAndQuestions_100p": {
+        "model_id: ": "ft:gpt-3.5-turbo-0125:personal:medilingo:94Zh7J6M",
+        "validation_dataset_name": "interviewAndQuestions_val_100p.jsonl",
+        "validation_dataset_size": 902,
+        "BLEU_smoothing_function": "method2",
+        "total_bleu: ": 357.71186580162544,
+        "total_METEOR: ": 477.6202821523052,
+        "average_bleu: ": 0.3965763478953719,
+        "average_METEOR: ": 0.529512507929385,
+        "total_average_score(BLEU+METEOR)": 0.9260888558247569
+    },
+    "all_ROUGE_N_scores": {
+        "interviewOnly": 0.48240941996873715,
+        "interviewAndQuestions_25p": 0.5085073349015687,
+        "interviewAndQuestions_50p": 0.5607314558793496,
+        "interviewAndQuestions_100p": 0.5689841048536237
+    }
+}

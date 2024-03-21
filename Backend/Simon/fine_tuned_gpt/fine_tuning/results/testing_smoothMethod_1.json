@@ -1,0 +1,24 @@
+{
+    "interviewAndQuestions_50p": {
+        "model_id: ": "ft:gpt-3.5-turbo-0125:personal:medilingo:94WHfDoL",
+        "validation_dataset_name": "interviewAndQuestions_val_50p.jsonl",
+        "validation_dataset_size": 591,
+        "BLEU_smoothing_function": "method1",
+        "total_bleu: ": 183.62261458801964,
+        "total_METEOR: ": 308.33056494501517,
+        "average_bleu: ": 0.3106981634315053,
+        "average_METEOR: ": 0.521709923764831,
+        "total_average_score(BLEU+METEOR)": 0.8324080871963364
+    },
+    "interviewAndQuestions_100p": {
+        "model_id: ": "ft:gpt-3.5-turbo-0125:personal:medilingo:94Zh7J6M",
+        "validation_dataset_name": "interviewAndQuestions_val_100p.jsonl",
+        "validation_dataset_size": 902,
+        "BLEU_smoothing_function": "method1",
+        "total_bleu: ": 290.99356574120986,
+        "total_METEOR: ": 483.95869032287135,
+        "average_bleu: ": 0.3226092746576606,
+        "average_METEOR: ": 0.536539567985445,
+        "total_average_score(BLEU+METEOR)": 0.8591488426431055
+    }
+}

@@ -1,70 +1,354 @@
 #%%
 import itertools
-from nltk.translate.bleu_score import sentence_bleu
+import os
+from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
 from nltk.translate.meteor_score import meteor_score
 from nltk.tokenize import word_tokenize
 from openai import OpenAI
 import time
+import csv
+import pandas as pd
+import json
+import numpy as np
+from rouge import Rouge
+
+#from human_evaluation import generate_translations
 
 with open("/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/key.txt", 'r') as key:
   API_KEY = key.read()
   
 client = OpenAI(api_key=API_KEY)
-#%%
+
+# datasets
+
 interviewOnly_train = "/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/datasets/interviewOnly_train.jsonl"
-interviewOny_val = "/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/datasets/interviewOny_val.jsonl"
+interviewOnly_test = "/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/datasets/interviewOnly_test.jsonl"
 
-interviewAndQuestions_train = "/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/datasets/interviewAndQuestions_train.jsonl"
-interviewAndQuestions_val = "/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/datasets/interviewAndQuestions_val.jsonl"
+interviewAndQuestions_train_25p = "/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/datasets/interviewAndQuestions_train_25p.jsonl"
+interviewAndQuestions_test_25p = "/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/datasets/interviewAndQuestions_test_25p.jsonl"
 
-interviewOnly_train_id= client.files.create(file=open(interviewOnly_train, "rb"), purpose="fine-tune").id
-interviewOnly_val_id= client.files.create(file=open(interviewOnly_train, "rb"), purpose="fine-tune").id
-interviewAndQuestions_train_id = client.files.create(file=open(interviewAndQuestions_train, "rb"), purpose="fine-tune").id
-interviewAndQuestions_val_id = client.files.create(file=open(interviewAndQuestions_train, "rb"), purpose="fine-tune").id
+interviewAndQuestions_train_50p = "/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/datasets/interviewAndQuestions_train_50p.jsonl"
+interviewAndQuestions_test_50p = "/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/datasets/interviewAndQuestions_test_50p.jsonl"
 
-# epochs= [3, 4]
-# learning_rate_multiplier= [1.0,2.0]
-# batch_size= [32,64]
-# datasets = [[interviewOnly_train_id, interviewOnly_val_id], [interviewAndQuestions_train_id, interviewAndQuestions_val_id]]
+interviewAndQuestions_train_100p = "/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/datasets/interviewAndQuestions_train_100p.jsonl"
+interviewAndQuestions_test_100p = "/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/datasets/interviewAndQuestions_test_100p.jsonl"
+
+
+#%%
 
 #experiment
-epochs= [3, 4]
-learning_rate_multiplier= [1.0,2.0]
-batch_size= [32,64]
-datasets = [[interviewOnly_train_id,interviewOnly_val_id], [interviewAndQuestions_train_id, interviewAndQuestions_val_id]]
+datasets = [[interviewAndQuestions_train_50p, interviewAndQuestions_test_50p]]
 
-hyperparameter_combinations = itertools.product(epochs, learning_rate_multiplier, batch_size, datasets)
+models_and_parameters = []
 
-for epoch, learning_rate, batch_size, dataset_id in hyperparameter_combinations:
-
+for dataset_id in datasets:
+    
+    train_id = client.files.create(file=open(dataset_id[0], "rb"), purpose="fine-tune").id
+    test_id = client.files.create(file=open(dataset_id[1], "rb"), purpose="fine-tune").id   
+    dataset_name = client.files.retrieve(train_id).filename #filename for model suffix
+    
     #creating grid search over each hyperparameter combinations
     job = client.fine_tuning.jobs.create(
-            training_file=dataset_id[0],
-            validation_file=dataset_id[1],
+            training_file=train_id,
+            validation_file=test_id,
             model="gpt-3.5-turbo",
-            suffix=f"E={epoch}_LR{learning_rate}_BS={batch_size}_ID={dataset_id}",
+            suffix=f"MediLingo",
             hyperparameters={
-                "n_epochs": epoch,
-                "learning_rate_multiplier": learning_rate,
-                "batch_size": batch_size
+                "n_epochs": 3,
             }
         )
+    
     while True:
         job_info = client.fine_tuning.jobs.retrieve(job.id)
         if job_info.status == "succeeded":
             print(f"Fine-tuning job {job.id} completed")
+            
+            model_id = client.fine_tuning.jobs.retrieve(job.id).fine_tuned_model
+            
+            if "interviewOnly" in dataset_name:
+                row = f"interviewOnly; {model_id}; {job.hyperparameters}"
+                models_and_parameters.append(row) 
+            elif "interviewAndQuestions_train_25p" in dataset_name:
+                row = f"interviewAndQuestions_25p; {model_id}; {job.hyperparameters}"
+                models_and_parameters.append(row)
+            elif "interviewAndQuestions_train_50p" in dataset_name:
+                row = f"interviewAndQuestions_50p; {model_id}; {job.hyperparameters}"
+                models_and_parameters.append(row)
+            else: 
+                row = f"interviewAndQuestions_100p; {model_id}; {job.hyperparameters}"
+                models_and_parameters.append(row)
+            
             break
         elif job_info.status == "failed":
             print(f"Fine-tuning job {job.id} failed")
             break
+        elif job_info.status == "cancelled":
+            break
         else:
             print(job_info.status)
             print(f"Fine-tuning job {job.id} still running...")
+            
             time.sleep(10) #wait 10 seconds before new check
 
+#save all the finetuned models in a csv file
+with open('/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/results/IDs_and_hyperparameters.csv', 'a', encoding='utf-8') as file:
+    writer = csv.writer(file)
+    for translation in models_and_parameters:
+        dataset,model_id, hyper = translation.split(";")
+        writer.writerow([dataset.strip(), model_id.strip(), hyper.strip()])
 
 #questions in our test-sample-set for each subdepartment          
-#%%            
+
+#%%
+
+def load_jsonlFile(path):
+    lines = []
+    with open(path, 'r', encoding="utf-8") as file:
+        for line in file:
+            lines.append(json.loads(line))
+    return lines
+
+def specific_validationSet(dataset_name):
+
+    if "interviewOnly" in dataset_name:
+        #return "test.jsonl"
+        return "interviewOnly_val.jsonl"
+    elif "interviewAndQuestions_25p" in dataset_name:
+        #return "test.jsonl"
+        return "interviewAndQuestions_val_25p.jsonl"
+    elif "interviewAndQuestions_50p" in dataset_name:
+        #return "test.jsonl"
+        return "interviewAndQuestions_val_50p.jsonl"
+    elif "interviewAndQuestions_100p" in dataset_name: 
+        #return "test.jsonl"
+        return "interviewAndQuestions_val_100p.jsonl"
+
+def convert_chatprompt_to_csv(dataset):
+
+    csv_messages = []
+    
+    for obj in dataset:
+        danish_text = ""
+        ukrainian_text = ""
+        original_messages = obj["messages"]
+
+        for message in original_messages:
+            if message["role"] == "user":
+                danish_text = message["content"]
+            elif message["role"] == "assistant":
+                ukrainian_text = message["content"]
+    
+        if danish_text and ukrainian_text:
+            csv_messages.append((danish_text.strip(), ukrainian_text.strip()))
+
+    path = "/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/results/TempValidation.csv"
+    
+    with open(path, 'w', encoding='utf-8', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(['danish', 'ukranian'])
+
+        for danish, ukrainian in csv_messages:
+            writer.writerow([danish, ukrainian])
+
+    output = pd.read_csv(path)
+    
+    os.remove(path)
+    
+    return output
+
+#%%
+#all the fine-tuned models generated from the grid-search like experiment
+FT_model_ids = pd.read_csv("/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/results/IDs_and_hyperparameters.csv")
+
+model_scores = {}
+
+rouge = Rouge()
+
+#calculating combined score (BLEU + METEOR) for each model
+
+for _,row in FT_model_ids.iterrows():
+    
+    model_dataset = row["dataset"]
+    model_id = row["model_id"]
+    path = f"/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/preprocess/validation_sets/{specific_validationSet(model_dataset)}"
+    #loading validation json file
+    
+    print(path)
+    
+    validation_dataset = load_jsonlFile(path)
+    
+    #converting the json to list of sentence pairs
+    validation_dataset_sentence = convert_chatprompt_to_csv(validation_dataset)
+    validation_set_length = len(validation_dataset_sentence)
+    
+    print("Validation_set name: "+ specific_validationSet(model_dataset) + " size:" +str(validation_set_length))
+    
+    best_model = {"best_dataset": "", "best_model_id": "","best_score": 0}
+    total_scores = {}
+    count = 1 #index starts at 0, but the first sentence is = 1
+    print("Model_dataset: " + model_dataset)
+    total_model_score = 0
+    total_bleu = 0
+    total_meteor = 0
+    total_rouge_n = 0
+    
+    for _,row in validation_dataset_sentence.iterrows():    
+        
+        target_sentence = row["danish"]
+        reference_translation = row["ukranian"]
+        print("count: " + str(count) + ", DK: " + target_sentence + ", UKR: " + reference_translation)
+        
+        completion = client.chat.completions.create(
+            model=model_id,
+            messages=[
+                {"role": "system", "content": "Translate from danish to ukranian"},
+                {"role": "user", "content": target_sentence}
+            ]
+        )
+        
+        generated_translation = completion.choices[0].message.content #generated translated sentence
+
+        bleu = sentence_bleu([reference_translation.split()], generated_translation.split(), smoothing_function=SmoothingFunction().method2)
+        meteor = meteor_score([reference_translation.split()], generated_translation.split())
+        scores  = rouge.get_scores(generated_translation, reference_translation)
+        rouge_n_score = scores[0]['rouge-1']['f']
+        
+        count += 1
+        
+        total_bleu += bleu
+        total_meteor += meteor
+        total_rouge_n += rouge_n_score
+        
+    total_model_score = (total_bleu + total_meteor + total_rouge_n) / validation_set_length
+    
+    
+    print("total BLEU: " + str(total_bleu))
+    print("total METEOR: " + str(total_meteor))
+    print("avg BLEU for: " + str(model_dataset) + " " + str((0.3965763478953719)))
+    print("avg METEOR for: " + str(model_dataset) + " " + str((total_meteor/validation_set_length)))
+    print("avg ROGUE_N for: " + str(model_dataset) + " " + str((total_rouge_n/validation_set_length)))
+    print("total average (BLEU+METEOR+ROGUE_N) for " + str(model_dataset) + ": " + str((total_model_score)))
+    total_scores["model_id: "] = model_id
+    total_scores[f"validation_dataset_name"] = (specific_validationSet(model_dataset))
+    total_scores[f"validation_dataset_size"] = (validation_set_length)
+    total_scores[f"BLEU_smoothing_function"] = "method2"
+    total_scores[f"total_bleu: "] = (total_bleu)
+    total_scores[f"total_METEOR: "] = (total_meteor)
+    total_scores[f"total_ROGUE_N: "] = (total_rouge_n)
+    total_scores[f"average_bleu: "] = (total_bleu/validation_set_length)
+    total_scores[f"average_METEOR: "] = (total_meteor/validation_set_length)
+    total_scores[f"average_ROGUE_N: "] = (rouge_n_score/validation_set_length)
+    
+    #saving sub-department scores in a dictionary for the model
+    
+    current_bestModel_score = total_model_score
+
+    if current_bestModel_score > best_model["best_score"]:
+        best_model["best_dataset"] = model_dataset
+        best_model["best_model_id"] = model_id
+        best_model["best_score"] = current_bestModel_score
+        
+    total_scores["total_average_score(BLEU+METEOR)"] = current_bestModel_score
+    model_scores[model_dataset] = total_scores
+
+print("\nmodel performance: ")
+print(model_scores)
+
+print("\nbest model: ")
+print(best_model)
+
+with open('/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/results/model_scores_withRogue.json', 'a') as f:
+    json.dump(model_scores, f, indent=4)
+
+
+#%%
+################################################################################
+################################################################################
+################################################################################
+########## ADDING ROUGE N: 
+################################################################################
+################################################################################
+################################################################################
+
+
+# FT_model_ids = pd.read_csv("/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/results/IDs_and_hyperparameters.csv")
+
+# rouge = Rouge()
+
+# with open('/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/results/model_scores_withRogue.json', 'r') as f:
+#     model_scores = json.load(f)
+
+# def calculate_rouge_scores(generated_translation, reference_translation):
+#     scores = rouge.get_scores(generated_translation, reference_translation)
+#     return scores[0]['rouge-1']['f']
+
+# all_rouge_n_scores = {}
+
+# for _, row in FT_model_ids.iterrows():
+#     model_dataset = row["dataset"]
+#     model_id = row["model_id"]
+#     path = f"/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/preprocess/validation_sets/{specific_validationSet(model_dataset)}"
+#     count = 1
+
+#     print("Model_dataset: " + model_dataset)
+
+#     validation_dataset = load_jsonlFile(path)
+#     validation_dataset_sentence = convert_chatprompt_to_csv(validation_dataset)
+#     validation_set_length = len(validation_dataset_sentence)
+#     print("Validation_set name: "+ specific_validationSet(model_dataset) + " size:" +str(validation_set_length))
+    
+#     total_rouge_n = 0
+
+#     for _, row in validation_dataset_sentence.iterrows():
+#         target_sentence = row["danish"]
+#         reference_translation = row["ukranian"]
+#         print("count: " + str(count) + ", DK: " + target_sentence + ", UKR: " + reference_translation)
+#         count += 1
+        
+#         completion = client.chat.completions.create(
+#             model=model_id,
+#             messages=[
+#                 {"role": "system", "content": "Translate from danish to ukranian"},
+#                 {"role": "user", "content": target_sentence}
+#             ]
+#         )
+#         generated_translation = completion.choices[0].message.content #generated translated sentence
+
+
+#         rouge_n_score = calculate_rouge_scores(generated_translation, reference_translation)
+#         total_rouge_n += rouge_n_score
+#         print("total rouge score: " + str(total_rouge_n))
+
+#     # calculate average ROUGE-N score
+#     average_rouge_n = total_rouge_n / len(validation_dataset_sentence)
+#     print("avg rouge: " + str(average_rouge_n))
+    
+#     # add average ROUGE-N score to all_rouge_n_scores dictionary
+#     all_rouge_n_scores[model_dataset] = average_rouge_n
+
+# # append all ROUGE-N scores to the model_scores dictionary
+# model_scores["total_avg_ROUGE_N_scores"] = all_rouge_n_scores
+
+# # append updated model scores to the JSON file
+# with open('/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/results/model_scores_withRogue.json', 'a') as f:
+#     json.dump(model_scores, f, indent=4)
+
+# # for testing purposes!
+# # with open('/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/results/model_scores_withRogue_test.json', 'a') as f:
+# #     json.dump(model_scores, f, indent=4)
+
+
+
+
+#%%
+################################################################################
+################################################################################
+################################################################################
+########## GENERATE TRANSLATIONS FOR THE HUMAN EVALUATION:
+################################################################################
+################################################################################
+################################################################################
+
 danish_radiograph_sentences = {
     "MR": 
         ["Har du fået lavet kunstige led?",
@@ -122,8 +406,8 @@ danish_radiograph_sentences = {
         "Du skal have indsat et kateter i dine lunger",
         "Vi kommer til at hjælpe dig med at kunne trække vejret igen ved at indsætte et kateter i dine lunger",
         "Vi skal indsætte et kateter i dine lunger, så du kan trække vejret bedre",
-        "Du kommer til at mærke et lille prik, for vi kan desværre ikke bedøve lungehinden",
-        "Lungehinden kan desværre ikke bedøves, så du vil kunne mærke, når vi stikker igennem den",
+        "Du kommer til at mærke et lille prik, for vi kan desværre ikke bedøve lunge hinden",
+        "Lunge hinden kan desværre ikke bedøves, så du vil kunne mærke, når vi stikker igennem den",
         "Du har en masse væske i din mave, så vi kommer til at indsætte et dræn for at afhjælpe dig.",
         "Er det muligt at du kan ligge på din venstre side under scanningen?",
         "Det er afgørende, at du ligger stille gennem hele scanningen.",
@@ -131,176 +415,141 @@ danish_radiograph_sentences = {
         "Det er vigtigt at du siger til, hvis du får det dårligt."]
 }
 
-#correct translated sentence from danish to ukranian
-ukranian_radiograph_sentences = {
-    "MR":
-        ["Чи робили вам штучні суглоби?",
-         "Чи вам імплантували метал у тіло хірургічним шляхом?",
-         "Вам робили операцію за кордоном?",
-         "У вас коли-небудь були металеві уламки в оці",
-         "Ви працювали ковалем або на будь-якій іншій роботі, де є ризик ушкодження металевими уламками?",
-         "У вас є який-небудь пірсинг?",
-         "Чи є на вас який-небудь метал, наприклад, пірсинг?",
-         "Ви використовуєте шпильки для волосся?",
-         "Чи є можливість того, що ви вагітні?",
-         "Чи є ймовірність того, що ви вагітні?",
-         "У вас є кардіостимулятор?",
-         "Ви перенесли операцію на серці?",
-         "Вам робили операцію на серці?",
-         "Чи відчуваєте ви клаустрофобію в малих приміщеннях?",
-         "Чи відчуваєте ви тривогу в тісному або обмеженому просторі?"
-         "Чи ви були солдатом",
-         "Чи коли-небудь вас поранено кулею або подібним чином",
-         "Коли ви встановили свою металеву протезу?",
-         "У вас є які-небудь слухові апарати?",
-         "Чи коли-небудь ви проходили операцію на голові?"],
-    "CT":
-        ["Чи знаєте ви про наявність у вас алергії?",
-         "Чи були у вас раніше алергічні симптоми?",
-         "Чи є щось, що ви не можете переносити через алергію?",
-         "Чи були у вас захворювання нирок?",
-         "Чи була у вас коли-небудь операція на нирках?",
-         "Чи проходили ви обстеження функції нирок?",
-         "У вас був діабет?",
-         "Ви хворієте на діабет?",
-         "Ви здавали аналіз крові?",
-         "Чи приймаєте ви якісь ліки?",
-         "Чи намагалися ви раніше вводити контраст, що містить йод?",
-         "Чи отримували ви коли-небудь контраст раніше?",
-         "Чи сталося щось минулого разу коли вам вводили контраст?",
-         "Чи сталося щось під час вашої останньої ін'єкції контрасту?"
-         "Ви можете відчувати тепло в тілі під час ін'єкції контрасту",
-         "Під час введення контрасту може здаватися, що ви мочитесь.",
-         "Ви можете відчути металевий присмак у роті від контрасту.",
-         "Сканер буде інформувати вас під час процесу вдиху і затримки дихання, а також коли відновити нормальне дихання.",
-         "Під час сканування вам потрібно вдихнути і затримати дихання приблизно на 4-5 секунд.",
-         "Ви повинні лежати рівно на спині протягом усього сканування."
-        ],
-    "UL":
-        ["Чи робили вам раніше біопсію тканин?",
-         "Чи доводилося вам раніше проходити біопсію тканин?",
-         "Чи боїтеся ви голок?",
-         "Вам необхідно пройти процедуру взяття зразка тканини з печінки.",
-         "Ви відчуєте укол під час взяття зразка тканини.",
-         "Ви коли-небудь випробовували місцевий наркоз раніше?",
-         "Вам потрібно отримати деякий місцевий наркоз, який потрібно буде дозволити діяти протягом приблизно однієї хвилини.",
-         "Це не повинно боліти після того, як ви отримали місцевий наркоз.",
-         "При введенні місцевої анестезії ви можете відчути відчуття печіння і стиснення.",
-         "Після наркозу ви не повинні відчувати нічого в цій області.",
-         "Вам потрібно ввести катетер у легені.",
-         "Ми допоможемо вам дихати знову вставивши катетер у ваші легені.",
-         "Нам потрібно ввести катетер у ваші легені щоб ви могли краще дихати.",
-         "Ви відчуєте невеликий укол тому що на жаль, ми не можемо знеболити плевру.",
-         "На жаль, плевру не можна знеболити, тому ви відчуєте укол коли ми будемо її проколювати.",
-         "У вас багато рідини в животі, тому ми вставимо дренаж, щоб допомогти вам відчувати полегшення.",
-         "Чи можливо, що ви зможете лежати на лівому боці під час сканування?",
-         "Дуже важливо щоб ви лежали нерухомо протягом усього сканування.",
-         "Ми проводимо обстеження в стерильних умовах, тому дуже важливо, щоб ви не рухалися або не змінювали свого положення, коли ми вас колотимо.",
-         "Важливо, щоб ви сказали, якщо ви почуваєте себе погано."
-        ]
-}
+def generate_translations(model_id, path):
+    translations = []
+    columns = ['danish', 'generated_translation']
+    
+    for sub_department in danish_radiograph_sentences:
+        phrases = danish_radiograph_sentences[sub_department]
+
+        for idx, sentence in enumerate(phrases):
+            completion = client.chat.completions.create(
+                model=model_id,
+                messages=[
+                    {"role": "system", "content": "Translate from danish to ukranian"},
+                    {"role": "user", "content": sentence}
+                ]
+            )
+            
+            generated_translation = completion.choices[0].message.content # generated translated sentence
+            translations.append({'danish': sentence, 'generated_translation': generated_translation})
+        
+    df = pd.DataFrame(translations, columns=columns)
+    df.to_excel(path, index=False)
+
+
+# import pandas as pd
+# from googletrans import Translator
+
+# def generate_translations_GT(path):
+#     translations = []
+#     columns = ['danish', 'generated_translation']
+#     translator = Translator()
+    
+#     for sub_department in danish_radiograph_sentences:
+#         phrases = danish_radiograph_sentences[sub_department]
+
+#         for idx, sentence in enumerate(phrases):
+#             translation = translator.translate(sentence, src='da', dest='uk')
+#             generated_translation = translation.text
+#             translations.append({'danish': sentence, 'generated_translation': generated_translation})
+        
+#     df = pd.DataFrame(translations, columns=columns)
+#     df.to_excel(path, index=False)
+
+
+#%% 
+# interviewOnly
+
+interviewOnly_id = "ft:gpt-3.5-turbo-0125:personal:medilingo:94UzywmL"
+generate_translations(interviewOnly_id, "/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/evaluation/evaluation_interviewOnly.xlsx")
+
+# %%
+
+# interviewAndQuestions_50p
+
+interviewOnly_id = "ft:gpt-3.5-turbo-0125:personal:medilingo:94Zh7J6M"
+generate_translations(interviewOnly_id, "/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/evaluation/evaluation_interviewAndQuestions_100percent.xlsx")
+
+
+# %%
+
+################################################################################
+################################################################################
+################################################################################
+########## SCORES ON KNOWN QUESTIONS (HUMAN EVALUATION)
+################################################################################
+################################################################################
+################################################################################
+
+
 
 #%%
-#all the fine-tuned models generated from the grid-search like experiment
-FT_model_ids = {
-    "InterviewOnly": "ft:gpt-3.5-turbo-0125:personal:medilingo:8z7ujSsh"
-}
+# #all the fine-tuned models generated from the grid-search like experiment
+# FT_model_ids = {
+#     "interviewAndQuestions_50p": "ft:gpt-3.5-turbo-0125:personal:medilingo:94WHfDoL",
+#     "InterviewAndQuestions_100p": "ft:gpt-3.5-turbo-0125:personal:medilingo:94Zh7J6M"
+# }
 
-model_scores = {}
+# model_scores = {}
 
-#calculating combined score (BLEU + METEOR) for each model
+# #calculating combined score (BLEU + METEOR) for each model
 
-for model_name in FT_model_ids:
+# for model_name in FT_model_ids:
     
-    model_id = FT_model_ids[model_name]
-    total_scores = {}
-    count = 1 #index starts at 0, but the first sentence is = 1
+#     model_id = FT_model_ids[model_name]
+#     total_scores = {}
+#     count = 1 #index starts at 0, but the first sentence is = 1
     
-    total_model_score = 0
-    for sub_department in danish_radiograph_sentences:
-        phrases = danish_radiograph_sentences[sub_department]
-        reference_translations = ukranian_radiograph_sentences[sub_department]
+#     total_model_score = 0
+#     for sub_department in danish_radiograph_sentences:
+#         phrases = danish_radiograph_sentences[sub_department]
+#         reference_translations = ukranian_radiograph_sentences[sub_department]
         
-        total_bleu = 0
-        total_meteor = 0
-        for idx, sentence in enumerate(phrases):
-            completion = client.chat.completions.create(
-                model=model_id,
-                messages=[
-                    {"role": "system", "content": "Translate from danish to ukranian"},
-                    {"role": "user", "content": sentence}
-                ]
-            )
+#         total_bleu = 0
+#         total_meteor = 0
+#         for idx, sentence in enumerate(phrases):
+#             completion = client.chat.completions.create(
+#                 model=model_id,
+#                 messages=[
+#                     {"role": "system", "content": "Translate from danish to ukranian"},
+#                     {"role": "user", "content": sentence}
+#                 ]
+#             )
             
-            generated_translation = completion.choices[0].message.content #generated translated sentence
+#             generated_translation = completion.choices[0].message.content #generated translated sentence
                 
-            # Finding the corresponding Ukrainian translation using the index
-            reference_translation = ukranian_radiograph_sentences[sub_department][idx-1] #finding the correct ukraninan translation for the sentence
+#             # Finding the corresponding Ukrainian translation using the index
+#             reference_translation = ukranian_radiograph_sentences[sub_department][idx-1] #finding the correct ukraninan translation for the sentence
             
-            bleu = sentence_bleu([reference_translation.split()], generated_translation.split())
+#             bleu = sentence_bleu([reference_translation.split()], generated_translation.split(),smoothing_function=SmoothingFunction().method2)
 
-            meteor = meteor_score([reference_translation.split()], generated_translation.split())
+#             meteor = meteor_score([reference_translation.split()], generated_translation.split())
             
-            print("count: " + str(count) + " : " + sub_department)
-            count += 1
+#             print("count: " + str(count) + " : " + sub_department)
+#             count += 1
             
-            total_bleu += bleu
-            total_meteor += meteor
-            total_model_score += (bleu + meteor)
+#             total_bleu += bleu
+#             total_meteor += meteor
+#             total_model_score += (bleu + meteor)
         
-        print("avg BLEU for: " + sub_department + " " + str((total_bleu/20)))
-        print("avg METEOR for: " + sub_department + " " + str((total_meteor/20)))
+#         print("avg BLEU for: " + sub_department + " " + str((total_bleu/20)))
+#         print("avg METEOR for: " + sub_department + " " + str((total_meteor/20)))
             
-        total_scores[sub_department + "_avg_bleu: "] = (total_bleu/20)
-        total_scores[sub_department + "_avg_METEOR: "] = (total_meteor/20)
+#         total_scores[sub_department + "_avg_bleu: "] = (total_bleu/20)
+#         total_scores[sub_department + "_avg_METEOR: "] = (total_meteor/20)
     
-    #saving sub-department scores in a dictionary for the model
-    print(count)
-    total_scores["total_average_score(BLEU+METEOR)"] = (total_model_score/60)
-    model_scores[model_name] = total_scores
+#     #saving sub-department scores in a dictionary for the model
+#     print(count)
+#     total_scores["total_average_score(BLEU+METEOR)"] = (total_model_score/60)
+#     model_scores[model_name] = total_scores
 
-print("model performance: ")
-print(model_scores)
-    
+# print("model performance: ")
+# print(model_scores)
 
-# %%
+# with open('/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/results/model_scores_evaluation_questions.json', 'w') as f:
+#     json.dump(model_scores, f, indent=4)
 
-best_model = {
-    "InterviewOnly": "ft:gpt-3.5-turbo-0125:personal:medilingo:8z7ujSsh"
-}
 
-def generate_translations(model_id):
-    
-    translations = []
-    
-    for sub_department in danish_radiograph_sentences:
-        phrases = danish_radiograph_sentences[sub_department]
-
-        for idx, sentence in enumerate(phrases):
-            completion = client.chat.completions.create(
-                model=model_id,
-                messages=[
-                    {"role": "system", "content": "Translate from danish to ukranian"},
-                    {"role": "user", "content": sentence}
-                ]
-            )
-            
-            generated_translation = completion.choices[0].message.content #generated translated sentence
-            translations.append(f"{sentence} : {generated_translation}")
-        
-    return translations
-
-generated = generate_translations(best_model["InterviewOnly"])
-
-# %%
-import csv
-#save the table into a csv
-
-with open('interviewOnly.csv', 'w', newline='', encoding='utf-8') as file:
-    writer = csv.writer(file)
-    writer.writerow(['danish', 'generated_translation'])
-    for translation in generated:
-        danish, generated_translation = translation.split(":")
-        writer.writerow([danish.strip(), generated_translation.strip()])
 
 # %%

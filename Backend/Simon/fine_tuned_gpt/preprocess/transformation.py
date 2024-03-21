@@ -46,18 +46,24 @@ combine_csv("/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_
 def get_dfs():
     
     data = []
-    with open("/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/preprocess/interviewOnly.jsonl", 'r') as f:
+    with open("/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/preprocess/final_datasets/interviewAndQuestions_100p.jsonl", 'r') as f:
         for line in f:
             data.append(json.loads(line))
-            
-    training, validation = train_test_split(data, train_size=0.8,shuffle=True)
     
-    with open("training.jsonl", 'w') as f:
+    dataset, validation_set = train_test_split(data, train_size=0.90,shuffle=True)
+    
+    training, test= train_test_split(dataset, train_size=0.80,shuffle=True)
+    
+    with open("interviewAndQuestions_train_100p.jsonl", 'w') as f:
         for item in training:
             f.write(json.dumps(item, ensure_ascii=False) + '\n')
 
-    with open("validation_set.jsonl", 'w') as f:
-        for item in validation:
+    with open("interviewAndQuestions_test_100p.jsonl", 'w') as f:
+        for item in test:
+            f.write(json.dumps(item, ensure_ascii=False) + '\n')
+            
+    with open("interviewAndQuestions_val_100p.jsonl", 'w') as f:
+        for item in validation_set:
             f.write(json.dumps(item, ensure_ascii=False) + '\n')
 
 get_dfs()
