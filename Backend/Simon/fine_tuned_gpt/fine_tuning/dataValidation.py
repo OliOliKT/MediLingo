@@ -5,7 +5,7 @@ import tiktoken
 import numpy as np
 from collections import defaultdict
 
-data_path = "training_set.jsonl"
+data_path = "/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/interviewAndQuestions_val_50p.jsonl"
 
 # Load the dataset
 with open(data_path, 'r', encoding='utf-8') as f:
@@ -16,7 +16,7 @@ print("Num examples:", len(dataset))
 print("First example:")
 for message in dataset[0]["messages"]:
     print(message)
-    
+
 # Format error checks
 format_errors = defaultdict(int)
 
@@ -24,12 +24,12 @@ for ex in dataset:
     if not isinstance(ex, dict):
         format_errors["data_type"] += 1
         continue
-        
+    
     messages = ex.get("messages", None)
     if not messages:
         format_errors["missing_messages_list"] += 1
         continue
-        
+    
     for message in messages:
         if "role" not in message or "content" not in message:
             format_errors["message_missing_key"] += 1
@@ -85,7 +85,7 @@ def print_distribution(values, name):
     print(f"mean / median: {np.mean(values)}, {np.median(values)}")
     print(f"p5 / p95: {np.quantile(values, 0.1)}, {np.quantile(values, 0.9)}")
     
-    
+
 # Warnings and tokens counts
 n_missing_system = 0
 n_missing_user = 0
@@ -131,4 +131,10 @@ n_billing_tokens_in_dataset = sum(min(MAX_TOKENS_PER_EXAMPLE, length) for length
 print(f"Dataset has ~{n_billing_tokens_in_dataset} tokens that will be charged for during training")
 print(f"By default, you'll train for {n_epochs} epochs on this dataset")
 print(f"By default, you'll be charged for ~{n_epochs * n_billing_tokens_in_dataset} tokens")
+
+# Calculate the estimated cost for fine-tuning
+cost_per_100k_tokens = 0.80  # Cost for every 100,000 tokens
+estimated_cost = ((n_epochs * n_billing_tokens_in_dataset) / 100000) * cost_per_100k_tokens
+print(f"Estimated cost for fine-tuning: approximately ${estimated_cost:.2f}") #I added this for actual cost based on current pricing
+
 # %%
