@@ -21,7 +21,9 @@ def format_to_chatgpt_format(input, output):
             f.write(json.dumps(object, ensure_ascii=False) + '\n')
 
 
-def train_and_val_set(input, training_output, validation_output):
-    training, validation = train_test_split(input, train_size = 0.8, shuffle=False)
+def train_test_val_set(input, training_output, testing_output, validation_output):
+    training, temp = train_test_split(input, train_size=0.7, shuffle=False)
+    testing, validation = train_test_split(temp, train_size=0.67, shuffle=False)
     format_to_chatgpt_format(training, training_output)
+    format_to_chatgpt_format(testing, testing_output)
     format_to_chatgpt_format(validation, validation_output)

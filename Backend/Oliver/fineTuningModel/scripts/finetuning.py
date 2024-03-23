@@ -35,4 +35,3 @@ def tune_data(training_file, validation_file, client, API_KEY):
   print("\n")
   for m in messages:
       print(m.message)
-    

@@ -198,7 +198,7 @@ ukranian_radiograph_sentences = {
 #%%
 
 model_scores = {}
-
+# Den kører igennem alle 4 modeller på deres respektive valderingssæt og laver en oversættelse (generated sentence) og holder den oppe imod hvert objekt ukrainske sætning i valderingssættet
 def calculate_combined_score(API_KEY, model_id):
 
     client = OpenAI(api_key=API_KEY)

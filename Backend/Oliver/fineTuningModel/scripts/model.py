@@ -1,10 +1,8 @@
 from openai import OpenAI
 
 
-API_KEY = "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"
-client = OpenAI(api_key=API_KEY)
-
-def test_model(phrase):
+def test_model(phrase, API_KEY):
+  client = OpenAI(api_key=API_KEY)
   completion = client.chat.completions.create(
     model = "ft:gpt-3.5-turbo-0125:personal:medilingo:8z7ujSsh",
     messages = [
