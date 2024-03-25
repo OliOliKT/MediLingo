@@ -45,7 +45,7 @@ export const IntroductionScreen = () => {
     const navigation = useNavigation();
 
     const handlePress = () => {
-        navigation.navigate('Translate');
+        navigation.navigate('Main');
     };
 
     return (
@@ -56,7 +56,7 @@ export const IntroductionScreen = () => {
             <LanguageDropdown />
             <View style={{ marginBottom: 130 }} />
             <DepartmentDropdown />
-            <View style={{ marginBottom: 170 }} />
+            <View style={{ marginBottom: 190 }} />
             <IconTextButton 
                 onPress={handlePress} 
                 iconName="arrow-forward" 

@@ -1,5 +1,6 @@
 import React from "react";
 import { FlatList } from "react-native";
+import { theme } from "../../infrastructure/theme/index";
 
 import {
     PhrasesContent,
@@ -11,9 +12,9 @@ import {
   } from "./conversationHistory.styles";
 
 const CONVERSATIONS = [
-    { phrase: "Chuck Norris", patient: Math.random() < 0.5 },
-    { phrase: "Bruce Lee", patient: Math.random() < 0.5 },
-    { phrase: "Steven Seagal", patient: Math.random() < 0.5 },
+    { phrase: "Chuck Norris is an actor who acts in a lot of movies", patient: Math.random() < 0.5 },
+    { phrase: "Bruce Lee is the name of another actor", patient: Math.random() < 0.5 },
+    { phrase: "Steven Seagal is someone i dont know who is but i recognize the name", patient: Math.random() < 0.5 },
     { phrase: "Tony Jaa", patient: Math.random() < 0.5 },
     { phrase: "Jet Li", patient: Math.random() < 0.5 },
     { phrase: "Jean Claude Van Damme", patient: Math.random() < 0.5 },
@@ -38,23 +39,35 @@ const patientDoctorIcon = (patient) => {
     if (patient) {
         return {
             icon: "arrow-back",
-            color: "green",
+            color: theme.colors.greens.mint,
+            string: "Patient: ",
         }
     }
     else {
         return {
             icon: "arrow-forward",
-            color: "blue",
+            color: theme.colors.blues.cyanBlue,
+            string: "Doctor: ",
         }
     }
 };
 
+const truncateText = (text, maxLength = 46) => {
+    if (text.length > maxLength) {
+        return text.substring(0, maxLength) + "...";
+    }
+    return text;
+};
+
 const PhraseItem = React.memo(({ item }) => {
+
+    const truncatedPhrase = truncateText(item.phrase);
     
     return (
         <PhrasesContent>
             <PhraseDetails>
-                <Phrase>{item.phrase}</Phrase>
+                <Phrase isBold={true}>{patientDoctorIcon(item.patient).string} </Phrase>
+                <Phrase>{truncatedPhrase}</Phrase>
             </PhraseDetails>
             <PatientDoctorIcon 
                 name={patientDoctorIcon(item.patient).icon} 
