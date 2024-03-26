@@ -27,11 +27,15 @@ export const TranslateScreen = () => {
         Speech.speak(topInputText);
     };
 
+    const speakBottomInputText = () => {
+        Speech.speak(bottomInputText);
+    };
+
     return (
         <TranslateScreenContainer>
             
             <ButtonContainer>
-                <ActionButton>
+                <ActionButton onPress={speakBottomInputText}>
                     <ActionButtonIcon name="volume-high" reverse={true}/>
                 </ActionButton>
                 <ActionButton>
