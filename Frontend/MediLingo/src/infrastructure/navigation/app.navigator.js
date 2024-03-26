@@ -1,6 +1,7 @@
 import React from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { theme } from "../theme";
 
 import { IntroductionScreen } from "../../screens/introduction/introduction.screen";
@@ -10,10 +11,10 @@ import { SettingsScreen } from "../../screens/settings/settings.screen";
 import { ConversationHistoryScreen } from "../../screens/conversationHistory/conversationHistory.screen";
 
 const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
 
 const TAB_ICON = {
   Translate: "chatbox",
-  Introduction: "people",
   Prompts: "albums",
   Settings: "settings",
   History: "time",
@@ -34,12 +35,21 @@ const createScreenOptions = ({ route }) => {
   };
 };
 
+function NavigationTabs() {
+  return (
+    <Tab.Navigator screenOptions={createScreenOptions}>
+      <Tab.Screen name="Translate" component={TranslateScreen} />
+      <Tab.Screen name="Prompts" component={PromptsScreen} />
+      <Tab.Screen name="History" component={ConversationHistoryScreen} />
+      <Tab.Screen name="Settings" component={SettingsScreen} />
+    </Tab.Navigator>
+  );
+}
+
 export const AppNavigator = () => (
-  <Tab.Navigator screenOptions={createScreenOptions}>
-    <Tab.Screen name="Introduction" component={IntroductionScreen} />
-    <Tab.Screen name="Prompts" component={PromptsScreen} />
-    <Tab.Screen name="Translate" component={TranslateScreen} />
-    <Tab.Screen name="History" component={ConversationHistoryScreen} />
-    <Tab.Screen name="Settings" component={SettingsScreen} />
-  </Tab.Navigator>
+    <Stack.Navigator>
+      <Stack.Screen name="Introduction" component={IntroductionScreen} options={{headerShown: false}} />
+      <Stack.Screen name="Main" component={NavigationTabs} options={{headerShown: false}} />
+    </Stack.Navigator>
 );
+

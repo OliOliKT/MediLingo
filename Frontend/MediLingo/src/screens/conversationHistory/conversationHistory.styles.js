@@ -21,6 +21,7 @@ export const PhraseDetails = styled.View`
 export const Phrase = styled(Text)`
     font-family: ${(props) => props.theme.fonts.body};
     font-weight: ${(props) => props.theme.fontWeights.bold};
+    font-weight: ${(props) => props.isBold ? props.theme.fontWeights.bold : props.theme.fontWeights.regular};
 `;
 
 export const ItemSeparator = styled.View`
