@@ -1,0 +1,20 @@
+{
+    "interviewAndQuestions_50p": {
+        "MR_avg_bleu: ": 0.15497265930296136,
+        "MR_avg_METEOR: ": 0.22508351345734603,
+        "CT_avg_bleu: ": 0.20199502068593067,
+        "CT_avg_METEOR: ": 0.25625210500791534,
+        "UL_avg_bleu: ": 0.09883680671106529,
+        "UL_avg_METEOR: ": 0.1520612704756366,
+        "total_average_score(BLEU+METEOR)": 0.36306712521361845
+    },
+    "InterviewAndQuestions_100p": {
+        "MR_avg_bleu: ": 0.14681916788263005,
+        "MR_avg_METEOR: ": 0.20027410178862662,
+        "CT_avg_bleu: ": 0.2129763251212171,
+        "CT_avg_METEOR: ": 0.26611870947818683,
+        "UL_avg_bleu: ": 0.10908313964583252,
+        "UL_avg_METEOR: ": 0.16489580135359125,
+        "total_average_score(BLEU+METEOR)": 0.36672241509002806
+    }
+}

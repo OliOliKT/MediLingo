@@ -1,0 +1,5 @@
+dataset,model_id,hyperparameters
+interviewOnly,ft:gpt-3.5-turbo-0125:personal:medilingo:94UzywmL,"Hyperparameters(n_epochs=3, batch_size=4, learning_rate_multiplier=2)"
+interviewAndQuestions_25p,ft:gpt-3.5-turbo-0125:personal:medilingo:94XbTe4o,"Hyperparameters(n_epochs=3, batch_size=6, learning_rate_multiplier=2)"
+interviewAndQuestions_50p,ft:gpt-3.5-turbo-0125:personal:medilingo:94WHfDoL,"Hyperparameters(n_epochs=3, batch_size=8, learning_rate_multiplier=2)"
+interviewAndQuestions_100p,ft:gpt-3.5-turbo-0125:personal:medilingo:94Zh7J6M,"Hyperparameters(n_epochs=3, batch_size=12, learning_rate_multiplier=2)"

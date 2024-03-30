@@ -1,0 +1,2 @@
+{"messages": [{"role": "system", "content": "Translating from Danish to Ukrainian for medical purposes"}, {"role": "user", "content": "Har du haft perioder med åndenød?"}, {"role": "assistant", "content": "Чи були у вас періоди задишки?"}]}
+{"messages": [{"role": "system", "content": "Translating from Danish to Ukrainian for medical purposes"}, {"role": "user", "content": "Du kan få følelsen af at tisse, når kontrasten indgives."}, {"role": "assistant", "content": "Під час введення контрасту може виникнути відчуття ніби ви мочитесь."}]}
