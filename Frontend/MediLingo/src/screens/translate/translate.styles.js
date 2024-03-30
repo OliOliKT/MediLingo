@@ -8,7 +8,20 @@ const screenHeight = Dimensions.get('window').height;
 export const TranslateScreenContainer = styled.View`
   flex: 1;
   align-items: center;
-  margin-top: 50px;
+  justify-content: space-between; 
+  width: 100%;
+`;
+
+export const TopContainer = styled.View`
+  align-items: center;
+  width: 100%;
+  margin-top: 56px;
+`;
+
+export const BottomContainer = styled.View`
+  align-items: center;
+  width: 100%;
+  margin-bottom: 10px;
 `;
 
 export const ButtonContainer = styled.View`
@@ -17,8 +30,8 @@ export const ButtonContainer = styled.View`
 `;
 
 export const ActionButton = styled.TouchableOpacity`
-  height: ${screenHeight * 0.08}px;
-  width: ${screenHeight * 0.08}px;
+  height: ${screenHeight * 0.077}px;
+  width: ${screenHeight * 0.077}px;
   border-radius: 50px;
   background-color: ${(props) => props.theme.colors.blues.cyanBlue};
   justify-content: center;
@@ -29,12 +42,12 @@ export const ActionButton = styled.TouchableOpacity`
 
 export const ActionButtonIcon = styled(Ionicons)`
   color: white;
-  font-size: ${screenWidth * 0.08}px;
+  font-size: ${screenWidth * 0.09}px;
   transform: ${(props) => props.reverse ? 'rotate(180deg)' : ''};
 `;
 
 export const TranslateInput = styled.TextInput`
-  height: ${screenHeight * 0.32}px;
+  height: ${screenHeight * 0.31}px;
   width: 96%;
   padding: 14px;
   border-radius: 4px;

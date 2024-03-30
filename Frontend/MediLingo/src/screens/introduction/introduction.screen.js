@@ -4,27 +4,29 @@ import { IconTextButton } from "../../components/iconTextButton.component";
 import { useNavigation } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
 import { View } from 'react-native';
+import { useAppContext } from '../../components/context';
 
 export const DepartmentDropdown = () => {
-    const [selectedValue, setSelectedValue] = useState("java");
+    const { selectedDepartment, setDepartment } = useAppContext();
+
     return (
         <StyledPickerContainer>
             <Picker
-                selectedValue={selectedValue}
-                onValueChange={(itemValue) => setSelectedValue(itemValue)}
+                selectedValue={selectedDepartment}
+                onValueChange={(itemValue) => setDepartment(itemValue)}
                 style={{ width: '100%', height: '100%' }}
             >
-            <Picker.Item label="X-ray imaging" value="xRayImaging" />
-            <Picker.Item label="CT scanning" value="ctScanning" />
-            <Picker.Item label="MRI scanning" value="mriScanning" />
-            <Picker.Item label="Ultrasound" value="ultrasound" />
+                <Picker.Item label="Røntgenbilleder" value="xRayImaging" />
+                <Picker.Item label="CT-scanning" value="ctScanning" />
+                <Picker.Item label="MR-scanning" value="mriScanning" />
+                <Picker.Item label="Ultralyd" value="ultrasound" />
             </Picker>
         </StyledPickerContainer>
     );
 };
 
 export const LanguageDropdown = () => {
-    const [selectedValue, setSelectedValue] = useState("java");
+    const [selectedValue, setSelectedValue] = useState("Ukrainsk");
     return (
         <StyledPickerContainer>
             <Picker
@@ -32,10 +34,10 @@ export const LanguageDropdown = () => {
                 onValueChange={(itemValue) => setSelectedValue(itemValue)}
                 style={{ width: '100%', height: '100%' }}
             >
-            <Picker.Item label="Ukrainian" value="ukrainan" />
-            <Picker.Item label="English" value="english" />
-            <Picker.Item label="German" value="german" />
-            <Picker.Item label="French" value="french" />
+            <Picker.Item label="Ukrainsk" value="ukrainan" />
+            <Picker.Item label="Engelsk" value="english" />
+            <Picker.Item label="Tysk" value="german" />
+            <Picker.Item label="Fransk" value="french" />
             </Picker>
         </StyledPickerContainer>
     );
@@ -60,7 +62,7 @@ export const IntroductionScreen = () => {
             <IconTextButton 
                 onPress={handlePress} 
                 iconName="arrow-forward" 
-                buttonText="Begin now" 
+                buttonText="Begynd nu" 
             />
         </IntroductionContainer>
     );

@@ -14,10 +14,10 @@ const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
 const TAB_ICON = {
-  Translate: "chatbox",
-  Prompts: "albums",
-  Settings: "settings",
-  History: "time",
+  Oversæt: "language",
+  Spørgsmål: "albums",
+  Indstillinger: "settings",
+  Historik: "time",
 };
 
 const tabBarIcon =
@@ -38,10 +38,10 @@ const createScreenOptions = ({ route }) => {
 function NavigationTabs() {
   return (
     <Tab.Navigator screenOptions={createScreenOptions}>
-      <Tab.Screen name="Translate" component={TranslateScreen} />
-      <Tab.Screen name="Prompts" component={PromptsScreen} />
-      <Tab.Screen name="History" component={ConversationHistoryScreen} />
-      <Tab.Screen name="Settings" component={SettingsScreen} />
+      <Tab.Screen name="Oversæt" component={TranslateScreen} />
+      <Tab.Screen name="Spørgsmål" component={PromptsScreen} />
+      <Tab.Screen name="Historik" component={ConversationHistoryScreen} />
+      <Tab.Screen name="Indstillinger" component={SettingsScreen} />
     </Tab.Navigator>
   );
 }
