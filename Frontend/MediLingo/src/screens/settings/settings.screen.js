@@ -25,7 +25,7 @@ export const SettingsScreen = () => {
             <IconTextButton 
                 onPress={handleReturnButtonPress} 
                 iconName="arrow-forward" 
-                buttonText="Back to menu" 
+                buttonText="Tilbage til menuen" 
             />
         </SettingsScreenContainer>
     );

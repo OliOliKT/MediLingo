@@ -20,8 +20,16 @@ export const PhraseDetails = styled.View`
 
 export const Phrase = styled(Text)`
     font-family: ${(props) => props.theme.fonts.body};
-    font-weight: ${(props) => props.theme.fontWeights.bold};
     font-weight: ${(props) => props.isBold ? props.theme.fontWeights.bold : props.theme.fontWeights.regular};
+`;
+
+export const Headline = styled(Text)`
+    font-size: ${(props) => props.theme.fontSizes.title};
+    font-family: ${(props) => props.theme.fonts.body};
+    font-weight: ${(props) => props.theme.fontWeights.bold};
+    margin-top: ${(props) => props.theme.space[4]};
+    margin-left: ${(props) => props.theme.space[3]};
+    margin-bottom: ${(props) => props.theme.space[3]};
 `;
 
 export const ItemSeparator = styled.View`
