@@ -13,7 +13,6 @@ import {
   } from "./prompts.styles";
 
 const departmentNameMapping = { 
-    xRayImaging: "Røntgenbilleder",
     ctScanning: "CT-scanning",
     mriScanning: "MR-scanning",
     ultrasound: "Ultralyd"
@@ -21,11 +20,6 @@ const departmentNameMapping = {
 };
 
 const prompts = {
-    xRayImaging: [
-        "What is your name?", 
-        "How old are you?", 
-        "What is your date of birth?", 
-        "What"],
     ctScanning: [
         "Har du nogen kendte allergier?",
         "Har du haft allergiske symptomer tidligere?",
@@ -118,13 +112,17 @@ export const PromptsScreen = () => {
             <PhraseItem item={item} />
         </TouchableOpacity>
     );
+
+    const sortedPrompts = React.useMemo(() => {
+        return prompts[selectedDepartment].slice().sort((a, b) => a.localeCompare(b));
+    }, [selectedDepartment]);
     
     return (
         <SafeArea>
         <Headline>Spørgsmål &#40;{departmentNameMapping[selectedDepartment]}&#41;:</Headline>
         <ItemSeparator />
         <FlatList
-            data={prompts[selectedDepartment]}
+            data={sortedPrompts}
             keyExtractor={(_, i) => String(i)}
             renderItem={renderItem}
             ItemSeparatorComponent={ItemSeparator}

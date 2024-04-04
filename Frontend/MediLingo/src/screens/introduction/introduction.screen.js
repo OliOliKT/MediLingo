@@ -16,7 +16,6 @@ export const DepartmentDropdown = () => {
                 onValueChange={(itemValue) => setDepartment(itemValue)}
                 style={{ width: '100%', height: '100%' }}
             >
-                <Picker.Item label="Røntgenbilleder" value="xRayImaging" />
                 <Picker.Item label="CT-scanning" value="ctScanning" />
                 <Picker.Item label="MR-scanning" value="mriScanning" />
                 <Picker.Item label="Ultralyd" value="ultrasound" />

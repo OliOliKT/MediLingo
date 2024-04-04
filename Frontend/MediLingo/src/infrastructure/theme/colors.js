@@ -19,6 +19,7 @@ export const colors = {
       mediumAquamarine: "#7ADCC3",
       lightGreen: "#1CFCC4",
     },
-    fontColor: "#606060"
+    fontColor: "#606060",
+    recordingColor: "#FF3B30",
   };
   

@@ -3,9 +3,13 @@ import React, { useState, useEffect } from 'react';
 import * as Speech from 'expo-speech';
 import { useAppContext } from '../../components/context';
 import { Audio } from 'expo-av';
+import { storage, fetchApiKey } from '../../infrastructure/firebase';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import OpenAI from 'openai';
 
 import { 
-    ActionButton, 
+    SoundButton, 
+    MicButton,
     ActionButtonIcon, 
     TranslateInput, 
     TranslateScreenContainer, 
@@ -14,52 +18,90 @@ import {
     BottomContainer
 } from "./translate.styles";
 
-
 export const TranslateScreen = () => {
     const [bottomInputText, setBottomInputText] = useState('');
     const [topInputText, setTopInputText] = useState('');
-    const [recording, setRecording] = React.useState();
-    const [isRecording, setIsRecording] = React.useState(false);
+
+    const [recording, setRecording] = useState();
+    const [isRecording, setIsRecording] = useState(false);
+
     const { addConversation, selectedPhrase, getCurrentTimeString } = useAppContext();
 
-    useEffect(() => {
-        setBottomInputText(selectedPhrase);
-    }, [selectedPhrase]);
+    const [openaiClient, setOpenaiClient] = useState(null);
 
-    const handleTopInputChange = (text) => {
-        setTopInputText(text);
-    };
     useEffect(() => {
-        setTopInputText(bottomInputText);
-    }, [bottomInputText]);
+        fetchApiKey().then(apiKey => {
+        if (apiKey) {
+            const config = new OpenAI({
+            apiKey: apiKey.trim(),
+            });
 
-    const handleBottomInputChange = (text) => {
-        setBottomInputText(text);
-    };
-    useEffect(() => {
-        setBottomInputText(topInputText);
-    }, [topInputText]);
+            const client = new OpenAI(config);
+            setOpenaiClient(client);
+        }
+        });
+    }, []);
 
-    const handleSubmitDoctor = (event) => {
-        const inputText = event.nativeEvent.text;
-        if (inputText) {
-            addConversation({ patient: false, phrase: inputText, time: getCurrentTimeString()});
+    const runPrompt = async (prompt) => { 
+        if (openaiClient) {
+            const response = await openaiClient.chat.completions.create({
+                model: "ft:gpt-3.5-turbo-0125:personal:medilingo:94WHfDoL",
+                messages: [
+                    { role: "system", content: "Translating from Danish to Ukrainian for medical purposes" },
+                    { role: "user", content: prompt },
+                ],
+            });
+        
+            console.log('Response:', response);
+            const completionText = response.choices[0].message.content;
+            return completionText;
         }
     }
 
-    const handleSubmitPatient = (event) => {
-        const inputText = event.nativeEvent.text;
+    useEffect(() => {
+        setBottomInputText(selectedPhrase);
+        handleSubmitDoctor(selectedPhrase);
+    }, [selectedPhrase]);
+
+    const handleSubmitDoctor = async (input) => {
+        const inputText = input.nativeEvent && input.nativeEvent.text ? input.nativeEvent.text : input;
+
+        if (inputText) {
+            addConversation({ patient: false, phrase: inputText, time: getCurrentTimeString()});
+            console.log('Bottom input text:', inputText);
+            try {
+                const translatedText = await runPrompt(inputText);
+                console.log("Translated text:", translatedText);
+                setTopInputText(translatedText);
+            } catch (error) {
+                console.error("Error getting translation:", error);
+            }
+        }
+        else {
+            setTopInputText("");
+        }
+    }
+
+    const handleSubmitPatient = (input) => {
+        const inputText = input.nativeEvent && input.nativeEvent.text ? input.nativeEvent.text : input;
         if (inputText) {
             addConversation({ patient: true, phrase: inputText, time: getCurrentTimeString()});
         }
     }
 
     const speakPatientInputText = () => {
-        Speech.speak(topInputText);
+        const options = {
+            volume: 1.0,
+            language: "uk",
+        };
+        Speech.speak(topInputText, options);
     };
 
     const speakDoctorInputText = () => {
-        Speech.speak(bottomInputText);
+        const options = {
+            volume: 1.0,
+        };
+        Speech.speak(bottomInputText, options);
     };
 
     const startRecording = async () => {
@@ -74,6 +116,7 @@ export const TranslateScreen = () => {
             );
             setRecording(recording);
             setIsRecording(true);
+            console.log('Recording started');
         } catch (err) {
             console.error('Failed to start recording', err);
         }
@@ -81,8 +124,10 @@ export const TranslateScreen = () => {
 
     const stopRecording = async () => {
         setIsRecording(false);
+        console.log('Recording stopped');
         await recording.stopAndUnloadAsync();
         const uri = recording.getURI(); 
+        console.log('Recording stopped and stored at', uri);
         sendAudioToServer(uri);
     };
     
@@ -94,87 +139,132 @@ export const TranslateScreen = () => {
         }
     };
 
-    const sendAudioToServer = async (audioUri) => {
-        const formData = new FormData();
-        formData.append('audio', {
-            uri: audioUri,
-            type: 'audio/m4a',
-            name: 'voice-recording.m4a',
-        });
-    
+    const sendAudioToServer = async (uri) => {
         try {
-            const response = await fetch('http://your-backend-url/transcribe', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
-            const data = await response.json();
-            setBottomInputText(data.text); // Assuming the server responds with JSON containing {text: "transcribed text"}
+          const response = await fetch(uri);
+          const blob = await response.blob();
+          const file_name = 'audio-file.flac';
+          
+          const storageRef = ref(storage, `uploads/${file_name}`);
+          console.log('Uploading audio to', storageRef.fullPath);
+      
+          await uploadBytes(storageRef, blob);
+          console.log('Upload complete, attempting to fetch transcription');
+          fetchTranscription(file_name);
         } catch (error) {
-            console.error('Error sending audio file:', error);
+          console.error('Error uploading file:', error);
         }
     };
+      
+    const fetchTranscription = async (fileName) => {
+        let loadingDots = '.';
+        setBottomInputText(loadingDots);
+    
+        const loadingInterval = setInterval(() => {
+            loadingDots = loadingDots.length < 3 ? loadingDots + '.' : '.';
+            setBottomInputText(loadingDots);
+        }, 500);
+    
+        const txtFileRef = ref(storage, `uploads/${fileName}.wav_transcription.txt`);
+        
+        const checkTranscriptionExists = () => {
+            getDownloadURL(txtFileRef)
+                .then((url) => {
+                    fetch(url)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.results && data.results.length > 0) {
+                                const transcript = data.results[0].alternatives[0].transcript;
+                                console.log('Transcription:', transcript);
+                                setBottomInputText(transcript);
+                            } else {
+                                setBottomInputText('');
+                            }
+                            clearInterval(loadingInterval); 
+                            deleteTranscriptionFile(txtFileRef);
+                        });
+                })
+                .catch((error) => {
+                    console.log('Transcription not ready, checking again...');
+                    setTimeout(checkTranscriptionExists, 1000);
+                });
+        };
+    
+        checkTranscriptionExists();
+    };    
+      
+      const deleteTranscriptionFile = (transcriptionRef) => {
+        deleteObject(transcriptionRef)
+          .then(() => {
+            console.log('Transcription file deleted successfully');
+          })
+          .catch((error) => {
+            console.error('Error deleting transcription file:', error);
+          });
+      };
+      
 
     return (
         <TranslateScreenContainer>
             <TopContainer>
                 <ButtonContainer>
-                    <ActionButton onPress={speakDoctorInputText}>
+                    <SoundButton onPress={speakDoctorInputText}>
                         <Image 
                             source={require('../../../assets/dk_sound_icon.png')}
                             resizeMode="cover"
                             style={{ width: '55%', height: '55%', transform: [{ rotate: '180deg' }] }}
                         />
-                    </ActionButton>
-                    <ActionButton>
-                        <ActionButtonIcon name="mic" reverse={true}/>
-                    </ActionButton>
-                    <ActionButton onPress={speakPatientInputText}>
+                    </SoundButton>
+                    <MicButton>
+                        <ActionButtonIcon name={isRecording ? "square" : "mic"} reverse={true}/>
+                    </MicButton>
+                    <SoundButton onPress={speakPatientInputText}>
                         <Image 
                                 source={require('../../../assets/ukr_sound_icon.png')}
                                 resizeMode="cover"
                                 style={{ width: '55%', height: '55%', transform: [{ rotate: '180deg' }] }}
                         />
-                    </ActionButton>
+                    </SoundButton>
                 </ButtonContainer>
                 <View style={{ marginBottom: 10 }}></View>
                 <TranslateInput 
-                    reverse={true} 
-                    value={topInputText} 
-                    onChangeText={handleTopInputChange}
-                    onSubmitEditing={handleSubmitPatient}
+                    reverse={true}
+                    onChangeText={(text) => setTopInputText(text)}
+                    onSubmitEditing={() => handleSubmitPatient(topInputText)}
+                    blurOnSubmit={true}
+                    multiline={true}
+                    value={topInputText}
                 />
             </TopContainer>
             <BottomContainer>
                 <TranslateInput 
-                    onChangeText={handleBottomInputChange} 
-                    onSubmitEditing={handleSubmitDoctor}
+                    onChangeText={(text) => setBottomInputText(text)}
+                    onSubmitEditing={() => handleSubmitDoctor(bottomInputText)}
+                    multiline={true}
+                    blurOnSubmit={true}
                     value={bottomInputText}
                 />
                 <View style={{ marginBottom: 10 }}></View>
                 <ButtonContainer>
-                    <ActionButton onPress={speakPatientInputText}>
+                    <SoundButton onPress={speakPatientInputText}>
                     <Image 
                         source={require('../../../assets/ukr_sound_icon.png')}
                         resizeMode="cover"
                         style={{ width: '55%', height: '55%' }}
                     />
-                    </ActionButton>
-                    <ActionButton>
-                        <ActionButtonIcon onPress={toggleRecording} name="mic" />
-                    </ActionButton>
-                    <ActionButton onPress={speakDoctorInputText}>
+                    </SoundButton>
+                    <MicButton onPress={toggleRecording} isRecording={isRecording}>
+                        <ActionButtonIcon name={isRecording ? "square" : "mic"} />
+                    </MicButton>
+                    <SoundButton onPress={speakDoctorInputText}>
                         <Image 
                             source={require('../../../assets/dk_sound_icon.png')}
                             resizeMode="cover"
                             style={{ width: '55%', height: '55%' }}
                         />
-                    </ActionButton>
+                    </SoundButton>
                 </ButtonContainer>
             </BottomContainer>
         </TranslateScreenContainer>
-
     );
 };
