@@ -25,22 +25,22 @@ const prompts = {
         "Har du haft allergiske symptomer tidligere?",
         "Er der noget, du ikke kan tåle på grund af allergi?",
         "Har du haft nogen nyresygdomme?",
-        "Er dine nyrer blevet opereret",
+        "Er dine nyrer blevet opereret?",
         "Har du fået undersøgt din nyrefunktion?",
         "Har du diabetes?",
         "Har du sukkersyge?",
         "Har du fået taget en blodprøve?",
         "Tager du nogen form for medicin?",
-        "Har du prøvet at få jod indeholdende kontrast før",
+        "Har du prøvet at få jodholdig kontrast før?",
         "Har du nogensinde fået kontrastvæske før?",
-        "Skete der noget sidste gang, du fik kontrast",
+        "Skete der noget sidste gang, du fik kontrast?",
         "Skete der noget sidste gang, du fik en indsprøjtning med kontrasten?",
-        "Du kan opleve en varmefornemmelse i kroppen, når du får kontrastinjektionen",
+        "Du kan opleve en varmefornemmelse i kroppen, når du får kontrastinjektionen.",
         "Det kan føles som om, du tisser, når du får kontrasten.",
-        "Du kan få en metalsmag i munden af kontrasten",
+        "Du kan få en metalsmag i munden af kontrasten.",
         "Scanneren vil fortælle dig undervejs, at du skal trække vejret ind og holde det. Efterfølgende vil den også fortælle, når du skal trække vejret normalt igen.",
         "Under scanningen skal du trække vejret ind og holde det i ca. 4-5 sekunder.",
-        "Du skal kunne ligge fladt ned på ryggen under hele scanningen"],
+        "Du skal kunne ligge fladt ned på ryggen under hele scanningen."],
     mriScanning: [
         "Har du fået lavet kunstige led?",
         "Har du fået indopereret metal i kroppen?",
@@ -66,18 +66,18 @@ const prompts = {
         "Har du prøvet at få taget en vævsprøve før?",
         "Har du prøvet at få taget en biopsi før?",
         "Er du bange for nåle?",
-        "Vi skal tage en vævsprøve fra din lever",
-        "Du kommer til at mærke et prik, når vævsprøven bliver taget",
+        "Vi skal tage en vævsprøve fra din lever.",
+        "Du kommer til at mærke et prik, når vævsprøven bliver taget.",
         "Har du prøvet at få lokalbedøvelse før?",
-        "Du skal have noget lokalbedøvelse, som bagefter skal have lov til at virke i et minuts tid",
-        "Det må ikke gøre ondt, når du har fået lokalbedøvelsen",
-        "Du kan mærke at det svier og spænder, når du får lokalbedøvelsen",
-        "Efter bedøvelsen skal du ikke kunne mærke noget I det område",
-        "Du skal have indsat et kateter i dine lunger",
-        "Vi kommer til at hjælpe dig med at kunne trække vejret igen ved at indsætte et kateter i dine lunger",
-        "Vi skal indsætte et kateter i dine lunger, så du kan trække vejret bedre",
-        "Du kommer til at mærke et lille prik, for vi kan desværre ikke bedøve lunge hinden",
-        "Lunge hinden kan desværre ikke bedøves, så du vil kunne mærke, når vi stikker igennem den",
+        "Du skal have noget lokalbedøvelse, som bagefter skal have lov til at virke i et minuts tid.",
+        "Det må ikke gøre ondt, når du har fået lokalbedøvelsen.",
+        "Du kan mærke at det svier og spænder, når du får lokalbedøvelsen.",
+        "Efter bedøvelsen skal du ikke kunne mærke noget I det område.",
+        "Du skal have indsat et kateter i dine lunger.",
+        "Vi kommer til at hjælpe dig med at kunne trække vejret igen ved at indsætte et kateter i dine lunger.",
+        "Vi skal indsætte et kateter i dine lunger, så du kan trække vejret bedre.",
+        "Du kommer til at mærke et lille prik, for vi kan desværre ikke bedøve lungehinden.",
+        "Lungehinden kan desværre ikke bedøves, så du vil kunne mærke, når vi stikker igennem den",
         "Du har en masse væske i din mave, så vi kommer til at indsætte et dræn for at afhjælpe dig.",
         "Er det muligt at du kan ligge på din venstre side under scanningen?",
         "Det er afgørende, at du ligger stille gennem hele scanningen.",
@@ -90,7 +90,7 @@ const PhraseItem = React.memo(({ item }) => {
     return (
         <PhrasesContent>
             <PhraseDetails>
-                <Phrase>"{item}"</Phrase>
+                <Phrase>{item}</Phrase>
             </PhraseDetails>
         </PhrasesContent>
     );
@@ -98,12 +98,11 @@ const PhraseItem = React.memo(({ item }) => {
 
 
 export const PromptsScreen = () => {
-    const { selectedDepartment, updateSelectedPhrase, addConversation, getCurrentTimeString } = useAppContext();
+    const { selectedDepartment, updateSelectedPhrase } = useAppContext();
     const navigation = useNavigation(); 
 
     const handlePressItem = (phrase) => {
-        updateSelectedPhrase(phrase);
-        addConversation({ patient: false, phrase: phrase, time: getCurrentTimeString()});
+        updateSelectedPhrase(phrase, true);
         navigation.navigate('Oversæt');
     };
 
