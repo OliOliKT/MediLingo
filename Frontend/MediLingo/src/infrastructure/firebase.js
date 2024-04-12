@@ -1,8 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getStorage, ref, getDownloadURL } from 'firebase/storage';
 
-let apiKey = null;
-
 const firebaseConfig = {
   apiKey: "AIzaSyDFReeWUmGdaM2knL_Y59zHiS-k4kv3J9g",
   authDomain: "medilingo-418907.firebaseapp.com",

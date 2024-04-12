@@ -1,4 +1,4 @@
-import { View, Image } from 'react-native';
+import { View, Image, Keyboard } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import * as Speech from 'expo-speech';
 import { useAppContext } from '../../components/context';
@@ -15,7 +15,8 @@ import {
     TranslateScreenContainer, 
     ButtonContainer, 
     TopContainer,
-    BottomContainer
+    BottomContainer,
+    DeleteButton,
 } from "./translate.styles";
 
 export const TranslateScreen = () => {
@@ -25,9 +26,13 @@ export const TranslateScreen = () => {
     const [recording, setRecording] = useState();
     const [isRecording, setIsRecording] = useState(false);
 
-    const { addConversation, selectedPhrase, getCurrentTimeString } = useAppContext();
+    const [transcript, setTranscript] = useState('');
+
+    const [transcriptionLanguage, setTranscriptionLanguage] = useState('');
 
     const [openaiClient, setOpenaiClient] = useState(null);
+
+    const { addConversation, selectedPhrase, getCurrentTimeString, shouldUpdateBottomText, setShouldUpdateBottomText } = useAppContext();
 
     useEffect(() => {
         fetchApiKey().then(apiKey => {
@@ -42,7 +47,7 @@ export const TranslateScreen = () => {
         });
     }, []);
 
-    const runPrompt = async (prompt) => { 
+    const runDanishPrompt = async (prompt) => { 
         if (openaiClient) {
             const response = await openaiClient.chat.completions.create({
                 model: "ft:gpt-3.5-turbo-0125:personal:medilingo:94WHfDoL",
@@ -56,12 +61,37 @@ export const TranslateScreen = () => {
             const completionText = response.choices[0].message.content;
             return completionText;
         }
-    }
+    };
+
+    const runUkranianPrompt = async (prompt) => { 
+        if (openaiClient) {
+            const response = await openaiClient.chat.completions.create({
+                model: "ft:gpt-3.5-turbo-0125:personal:medilingo:94WHfDoL",
+                messages: [
+                    { role: "system", content: "Translating from Ukrainian to Danish for medical purposes" },
+                    { role: "user", content: prompt },
+                ],
+            });
+        
+            console.log('Response:', response);
+            const completionText = response.choices[0].message.content;
+            return completionText;
+        }
+    };
 
     useEffect(() => {
-        setBottomInputText(selectedPhrase);
-        handleSubmitDoctor(selectedPhrase);
-    }, [selectedPhrase]);
+        if (shouldUpdateBottomText) {
+            setBottomInputText(selectedPhrase);
+            handleSubmitDoctor(selectedPhrase);
+            setShouldUpdateBottomText(false);
+        }
+    }, [selectedPhrase, shouldUpdateBottomText]);
+    
+    const deleteText = () => {
+        setBottomInputText("");
+        setTopInputText("");
+        Keyboard.dismiss();
+    };
 
     const handleSubmitDoctor = async (input) => {
         const inputText = input.nativeEvent && input.nativeEvent.text ? input.nativeEvent.text : input;
@@ -70,7 +100,7 @@ export const TranslateScreen = () => {
             addConversation({ patient: false, phrase: inputText, time: getCurrentTimeString()});
             console.log('Bottom input text:', inputText);
             try {
-                const translatedText = await runPrompt(inputText);
+                const translatedText = await runDanishPrompt(inputText);
                 console.log("Translated text:", translatedText);
                 setTopInputText(translatedText);
             } catch (error) {
@@ -82,10 +112,21 @@ export const TranslateScreen = () => {
         }
     }
 
-    const handleSubmitPatient = (input) => {
+    const handleSubmitPatient = async (input) => {
         const inputText = input.nativeEvent && input.nativeEvent.text ? input.nativeEvent.text : input;
         if (inputText) {
             addConversation({ patient: true, phrase: inputText, time: getCurrentTimeString()});
+            console.log('Top input text:', inputText);
+            try {
+                const translatedText = await runUkranianPrompt(inputText);
+                console.log("Translated text:", translatedText);
+                setBottomInputText(translatedText);
+            } catch (error) {
+                console.error("Error getting translation:", error);
+            }
+        }
+        else {
+            setBottomInputText("");
         }
     }
 
@@ -139,22 +180,49 @@ export const TranslateScreen = () => {
         }
     };
 
+    // const sendAudioToServer = async (uri) => {
+    //     try {
+    //       const response = await fetch(uri);
+    //       const blob = await response.blob();
+    //       const file_name = 'audio-file.flac';
+          
+    //       const storageRef = ref(storage, `uploads/${file_name}`);
+    //       console.log('Uploading audio to', storageRef.fullPath);
+      
+    //       await uploadBytes(storageRef, blob);
+    //       console.log('Upload complete, attempting to fetch transcription');
+    //       fetchTranscription(file_name);
+    //     } catch (error) {
+    //       console.error('Error uploading file:', error);
+    //     }
+    // };
+
     const sendAudioToServer = async (uri) => {
         try {
-          const response = await fetch(uri);
-          const blob = await response.blob();
-          const file_name = 'audio-file.flac';
+            const response = await fetch(uri);
+            const blob = await response.blob();
+            const timestamp = new Date().getTime();
+            const file_name = `${transcriptionLanguage}/${timestamp}-audio-file.flac`;
           
-          const storageRef = ref(storage, `uploads/${file_name}`);
-          console.log('Uploading audio to', storageRef.fullPath);
-      
-          await uploadBytes(storageRef, blob);
-          console.log('Upload complete, attempting to fetch transcription');
-          fetchTranscription(file_name);
+            const storageRef = ref(storage, `transcriptions/${file_name}`);
+            await uploadBytes(storageRef, blob);
+    
+            const functionUrl = `https://us-central1-medilingo-418907.cloudfunctions.net/transcribeAudio?filePath=transcriptions/${file_name}&languageCode=${transcriptionLanguage}`;
+            console.log('Fetching transcription from', functionUrl);
+            const transcriptionResponse = await fetch(functionUrl);
+            console.log('Transcription response:', transcriptionResponse);
+            const transcriptionData = await transcriptionResponse.json();
+            console.log(transcriptionData);
+    
+            setTranscript(transcriptionData.transcription);
+    
         } catch (error) {
-          console.error('Error uploading file:', error);
+            console.error('Error uploading file or fetching transcription:', error);
         }
     };
+    
+    
+      
       
     const fetchTranscription = async (fileName) => {
         let loadingDots = '.';
@@ -177,6 +245,7 @@ export const TranslateScreen = () => {
                                 const transcript = data.results[0].alternatives[0].transcript;
                                 console.log('Transcription:', transcript);
                                 setBottomInputText(transcript);
+                                handleSubmitDoctor(transcript);
                             } else {
                                 setBottomInputText('');
                             }
@@ -215,9 +284,18 @@ export const TranslateScreen = () => {
                             style={{ width: '55%', height: '55%', transform: [{ rotate: '180deg' }] }}
                         />
                     </SoundButton>
-                    <MicButton>
-                        <ActionButtonIcon name={isRecording ? "square" : "mic"} reverse={true}/>
+
+                    <MicButton onPress={() => {
+                        if (!isRecording) {
+                            setTranscriptionLanguage('uk-UA');
+                            toggleRecording();
+                        } else if (transcriptionLanguage === 'uk-UA') {
+                            toggleRecording();
+                        }
+                    }} isRecording={isRecording && transcriptionLanguage === 'uk-UA'}>
+                        <ActionButtonIcon name={isRecording && transcriptionLanguage === 'uk-UA' ? "square" : "mic"} reverse={true}/>
                     </MicButton>
+
                     <SoundButton onPress={speakPatientInputText}>
                         <Image 
                                 source={require('../../../assets/ukr_sound_icon.png')}
@@ -234,8 +312,16 @@ export const TranslateScreen = () => {
                     blurOnSubmit={true}
                     multiline={true}
                     value={topInputText}
+                    // editable={false} 
                 />
             </TopContainer>
+
+            {(topInputText || bottomInputText) && (
+                <DeleteButton onPress={deleteText}>
+                    <ActionButtonIcon name={"close"} />
+                </DeleteButton>
+            )}
+
             <BottomContainer>
                 <TranslateInput 
                     onChangeText={(text) => setBottomInputText(text)}
@@ -253,9 +339,17 @@ export const TranslateScreen = () => {
                         style={{ width: '55%', height: '55%' }}
                     />
                     </SoundButton>
-                    <MicButton onPress={toggleRecording} isRecording={isRecording}>
-                        <ActionButtonIcon name={isRecording ? "square" : "mic"} />
+                    <MicButton onPress={() => {
+                        if (!isRecording) {
+                            setTranscriptionLanguage('da-DK');
+                            toggleRecording();
+                        } else if (transcriptionLanguage === 'da-DK') {
+                            toggleRecording();
+                        }
+                    }} isRecording={isRecording && transcriptionLanguage === 'da-DK'}>
+                        <ActionButtonIcon name={isRecording && transcriptionLanguage === 'da-DK' ? "square" : "mic"} />
                     </MicButton>
+
                     <SoundButton onPress={speakDoctorInputText}>
                         <Image 
                             source={require('../../../assets/dk_sound_icon.png')}

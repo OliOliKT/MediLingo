@@ -1,7 +1,9 @@
 import React from "react";
-import { FlatList } from "react-native";
+import { FlatList, View } from "react-native";
 import { theme } from "../../infrastructure/theme/index";
 import { useAppContext } from '../../components/context';
+import { IconTextButton } from "../../components/iconTextButton.component";
+import { Share } from 'react-native';
 
 import {
     PhrasesContent,   
@@ -55,10 +57,26 @@ const PhraseItem = React.memo(({ item }) => {
         </PhrasesContent>
     );
     });
-    
-export const ConversationHistoryScreen = () => {
-    const { conversations } = useAppContext();
-    const renderItem = ({ item }) => <PhraseItem item={item} />;
+        
+    export const ConversationHistoryScreen = () => {
+        const { conversations } = useAppContext();
+        const renderItem = ({ item }) => <PhraseItem item={item} />;
+
+        const handlePress = () => {
+        const formattedConversations = conversations.map(conv => {
+            const speaker = conv.patient ? "Patient" : "Læge";
+            return `${speaker} (${conv.time}):\n"${conv.phrase}"`;
+        }).join('\n\n');
+
+        Share.share({
+            message: "Samtalehistorik: \n\n" + formattedConversations,
+            title: 'Del samtale',
+        }).then((result) => {
+            console.log('Share was successful:', result);
+        }).catch((error) => {
+            console.log('Share failed:', error.message);
+        });
+        };
     
     return (
         <SafeArea>
@@ -70,6 +88,12 @@ export const ConversationHistoryScreen = () => {
                 renderItem={renderItem}
                 ItemSeparatorComponent={ItemSeparator}
             />
+            <IconTextButton 
+                onPress={handlePress} 
+                iconName="arrow-forward"
+                buttonText="Eksporter samtalehistorik"
+            />
+            <View style={{ marginBottom: 24 }} />
         </SafeArea>
     );
 };

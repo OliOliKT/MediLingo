@@ -17,7 +17,8 @@ export const IconTextButton = ({ onPress, iconName, buttonText }) => {
 const ButtonContainer = styled.TouchableOpacity`
     flex-direction: row;
     align-items: center;
-    background-color: ${(props) => props.theme.colors.blues.greyCyanBlue};
+    align-self: center;
+    background-color: ${(props) => props.theme.colors.blues.cyanBlue};
     padding: 10px 20px;
     border-radius: 5px;
     margin: 10px;
