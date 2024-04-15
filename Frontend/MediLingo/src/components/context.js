@@ -8,6 +8,8 @@ export const AppProvider = ({ children }) => {
     const [conversations, setConversations] = useState([]);
     const [selectedDepartment, setSelectedDepartment] = useState("xRayImaging");
     const [selectedPhrase, setSelectedPhrase] = useState("");
+    const [shouldUpdateBottomText, setShouldUpdateBottomText] = useState(false);
+
 
     const addConversation = (item) => {
         setConversations((prevConversations) => [...prevConversations, item]);
@@ -17,8 +19,9 @@ export const AppProvider = ({ children }) => {
         setSelectedDepartment(department);
     };
 
-    const updateSelectedPhrase = (phrase) => {
+    const updateSelectedPhrase = (phrase, shouldUpdate = false) => {
         setSelectedPhrase(phrase);
+        setShouldUpdateBottomText(shouldUpdate);
     };
 
     const getCurrentTimeString = () => {
@@ -36,7 +39,9 @@ export const AppProvider = ({ children }) => {
             setDepartment, 
             selectedPhrase,
             updateSelectedPhrase,
-            getCurrentTimeString
+            getCurrentTimeString,
+            shouldUpdateBottomText,
+            setShouldUpdateBottomText,
         }}>
             {children}
         </AppContext.Provider>
