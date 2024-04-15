@@ -30,14 +30,15 @@ interviewAndQuestions_test_25p = "/Users/simono/Desktop/Thesis/Branches/MediLing
 interviewAndQuestions_train_50p = "/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/datasets/interviewAndQuestions_train_50p.jsonl"
 interviewAndQuestions_test_50p = "/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/datasets/interviewAndQuestions_test_50p.jsonl"
 
-interviewAndQuestions_train_100p = "/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/datasets/interviewAndQuestions_train_100p.jsonl"
-interviewAndQuestions_test_100p = "/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/datasets/interviewAndQuestions_test_100p.jsonl"
+interviewAndQuestions_train_100p = "/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/datasets/new_interviewAndQuestions_train_100p.jsonl"
+interviewAndQuestions_test_100p = "/Users/simono/Desktop/Thesis/Branches/MediLingo/Backend/Simon/fine_tuned_gpt/fine_tuning/datasets/new_interviewAndQuestions_test_100p.jsonl"
+
 
 
 #%%
 
 #experiment
-datasets = [[interviewAndQuestions_train_50p, interviewAndQuestions_test_50p]]
+datasets = [[interviewAndQuestions_train_100p, interviewAndQuestions_test_100p]]
 
 models_and_parameters = []
 
