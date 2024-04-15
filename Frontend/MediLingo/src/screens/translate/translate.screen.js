@@ -52,7 +52,7 @@ export const TranslateScreen = () => {
             const response = await openaiClient.chat.completions.create({
                 model: "ft:gpt-3.5-turbo-0125:personal:medilingo:94WHfDoL",
                 messages: [
-                    { role: "system", content: "Translating from Danish to Ukranian for medical purposes" },
+                    { role: "system", content: "You have to translate from Danish to Ukranian for medical purposes" },
                     { role: "user", content: prompt },
                 ],
             });
@@ -68,7 +68,7 @@ export const TranslateScreen = () => {
             const response = await openaiClient.chat.completions.create({
                 model: "ft:gpt-3.5-turbo-0125:personal:uktodk:9ENr7qy1",
                 messages: [
-                    { role: "system", content: "Translating from Ukrainian to Danish for medical purposes" },
+                    { role: "system", content: "You have to translate from Ukranian to Danish for medical purposes" },
                     { role: "user", content: prompt },
                 ],
             });
