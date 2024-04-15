@@ -23,9 +23,8 @@ exports.transcribeAudio = functions.https.onRequest(async (req, res) => {
     };
     const config = {
       encoding: 'FLAC',
+      sampleRateHertz: 48000,
       languageCode: languageCode,
-      enableAutomaticPunctuation: true,
-      sampleRateHertz: 16000,
     };
     const request = {
       audio: audio,
@@ -35,6 +34,7 @@ exports.transcribeAudio = functions.https.onRequest(async (req, res) => {
     // Asynchronously performs speech recognition
     const [operation] = await client.longRunningRecognize(request);
     const [response] = await operation.promise();
+    console.log('Transcription complete:', response);
     const transcription = response.results
       .map(result => result.alternatives[0].transcript)
       .join('\n');
