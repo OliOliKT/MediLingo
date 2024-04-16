@@ -26,8 +26,6 @@ export const TranslateScreen = () => {
     const [recording, setRecording] = useState();
     const [isRecording, setIsRecording] = useState(false);
 
-    const [transcript, setTranscript] = useState('');
-
     const [transcriptionLanguage, setTranscriptionLanguage] = useState('');
 
     const [openaiClient, setOpenaiClient] = useState(null);
@@ -50,7 +48,7 @@ export const TranslateScreen = () => {
     const runDanishPrompt = async (prompt) => { 
         if (openaiClient) {
             const response = await openaiClient.chat.completions.create({
-                model: "ft:gpt-3.5-turbo-0125:personal:medilingo:94WHfDoL",
+                model: "ft:gpt-3.5-turbo-0125:personal:medilingo:94Zh7J6M",
                 messages: [
                     { role: "system", content: "You have to translate from Danish to Ukranian for medical purposes" },
                     { role: "user", content: prompt },
@@ -165,7 +163,6 @@ export const TranslateScreen = () => {
 
     const stopRecording = async () => {
         setIsRecording(false);
-        console.log('Recording stopped');
         await recording.stopAndUnloadAsync();
         const uri = recording.getURI(); 
         console.log('Recording stopped and stored at', uri);
@@ -180,80 +177,37 @@ export const TranslateScreen = () => {
         }
     };
 
-    // const sendAudioToServer = async (uri) => {
-    //     try {
-    //       const response = await fetch(uri);
-    //       const blob = await response.blob();
-    //       const file_name = 'audio-file.flac';
-          
-    //       const storageRef = ref(storage, `uploads/${file_name}`);
-    //       console.log('Uploading audio to', storageRef.fullPath);
-      
-    //       await uploadBytes(storageRef, blob);
-    //       console.log('Upload complete, attempting to fetch transcription');
-    //       fetchTranscription(file_name);
-    //     } catch (error) {
-    //       console.error('Error uploading file:', error);
-    //     }
-    // };
-
     const sendAudioToServer = async (uri) => {
         try {
             const response = await fetch(uri);
             const blob = await response.blob();
             const timestamp = new Date().getTime();
             const file_name = `${transcriptionLanguage}/${timestamp}-audio-file.flac`;
+            console.log("Transcription language:", transcriptionLanguage);
+            console.log('File name:', file_name);
           
             const storageRef = ref(storage, `transcriptions/${file_name}`);
             await uploadBytes(storageRef, blob);
 
             fetchTranscription(file_name, transcriptionLanguage);
-            // fetchTranscription2(file_name, transcriptionLanguage);
-    
-            // const functionUrl = `https://us-central1-medilingo-418907.cloudfunctions.net/transcribeAudio?filePath=transcriptions/${file_name}&languageCode=${transcriptionLanguage}`;
-            // console.log('Fetching transcription from', functionUrl);
-            // const transcriptionResponse = await fetch(functionUrl);
-            // if (!transcriptionResponse.ok) {
-            //     throw new Error('Failed to fetch transcription');
-            // }
-            // console.log('Transcription response:', transcriptionResponse);
-            // const transcriptionData = await transcriptionResponse.json();
-            // console.log(transcriptionData);
-    
-            // setTranscript(transcriptionData.transcription);
     
         } catch (error) {
             console.error('Error uploading file or fetching transcription:', error);
         }
     };
 
-    const fetchTranscription2 = async (fileName, transcriptionLanguage) => { 
-        const functionUrl = `https://us-central1-medilingo-418907.cloudfunctions.net/transcribeAudio?filePath=transcriptions/${fileName}&languageCode=${transcriptionLanguage}`;
-        console.log('Fetching transcription from', functionUrl);
-        const transcriptionResponse = await fetch(functionUrl);
-        if (!transcriptionResponse.ok) {
-            throw new Error('Failed to fetch transcription');
-        }
-        const transcriptionData = await transcriptionResponse.json();
-        console.log(transcriptionData);
-        setBottomInputText(transcriptionData.transcription);
-    };
-
-
     const fetchTranscription = async (fileName, transcriptionLanguage) => {
         const txtFileRef = ref(storage, `transcriptions/${transcriptionLanguage}/transcriptions/${fileName}.wav_transcription.txt`);
-        console.log(txtFileRef);
+        console.log("Transcription file reference:", txtFileRef);
         let attemptCount = 0;
         const maxAttempts = 12;
 
         let loadingDots = '.';
-        setTopInputText(loadingDots);
-        setBottomInputText(loadingDots);
+        transcriptionLanguage === 'uk-UA' ? setTopInputText(loadingDots) : setBottomInputText(loadingDots);
 
         const loadingInterval = setInterval(() => {
             loadingDots = loadingDots.length < 3 ? loadingDots + '.' : '.';
-            setTopInputText(loadingDots)
-            setBottomInputText(loadingDots);
+            transcriptionLanguage === 'uk-UA' ? setTopInputText(loadingDots) : setBottomInputText(loadingDots);
         }, 700);
     
         const checkTranscriptionAvailable = async () => {
@@ -275,10 +229,12 @@ export const TranslateScreen = () => {
                     console.log('Transcription:', transcript);
                     if (transcriptionLanguage === 'uk-UA') { 
                         setTopInputText(transcript);
+                        console.log("Top input text:", transcript);
                         handleSubmitPatient(transcript);
                     }
                     else { 
                         setBottomInputText(transcript);
+                        console.log("Bottom input text:", transcript);
                         handleSubmitDoctor(transcript);
                     }
                     clearInterval(checkInterval);
@@ -288,7 +244,7 @@ export const TranslateScreen = () => {
 
                 } else {
                     console.log('Transcription file found but no results.');
-                    transcriptionLanguage === 'uk-UA' ? setTopInputText('No transcription available') : setBottomInputText('Transkribering ikke tilgængelig');
+                    transcriptionLanguage === 'uk-UA' ? setTopInputText('Транскрипція недоступна') : setBottomInputText('Transkribering ikke tilgængelig');
                     clearInterval(checkInterval);
                 }
                 clearInterval(loadingInterval); 
@@ -312,6 +268,35 @@ export const TranslateScreen = () => {
                     console.error('Error deleting file:', fileRef.fullPath, error);
                 }
             });
+    };
+
+    const uploadToServer = async (uri) => {
+        try {
+          const response = await fetch(uri);
+          const blob = await response.blob();
+          const file_name = 'audio-file.flac';
+          
+          const storageRef = ref(storage, `uploads/${file_name}`);
+          console.log('Uploading audio to', storageRef.fullPath);
+      
+          await uploadBytes(storageRef, blob);
+          console.log('Upload complete, attempting to fetch transcription');
+          fetchTranscription(file_name);
+        } catch (error) {
+          console.error('Error uploading file:', error);
+        }
+    };
+
+    const getTranscription = async (fileName, transcriptionLanguage) => { 
+        const functionUrl = `https://us-central1-medilingo-418907.cloudfunctions.net/transcribeAudio?filePath=transcriptions/${fileName}&languageCode=${transcriptionLanguage}`;
+        console.log('Fetching transcription from', functionUrl);
+        const transcriptionResponse = await fetch(functionUrl);
+        if (!transcriptionResponse.ok) {
+            throw new Error('Failed to fetch transcription');
+        }
+        const transcriptionData = await transcriptionResponse.json();
+        console.log(transcriptionData);
+        setBottomInputText(transcriptionData.transcription);
     };
       
 
@@ -354,7 +339,7 @@ export const TranslateScreen = () => {
                     blurOnSubmit={true}
                     multiline={true}
                     value={topInputText}
-                    // editable={false} 
+                    editable={false} 
                 />
             </TopContainer>
 
