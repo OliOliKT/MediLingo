@@ -26,8 +26,6 @@ export const TranslateScreen = () => {
     const [recording, setRecording] = useState();
     const [isRecording, setIsRecording] = useState(false);
 
-    const [transcript, setTranscript] = useState('');
-
     const [transcriptionLanguage, setTranscriptionLanguage] = useState('');
 
     const [openaiClient, setOpenaiClient] = useState(null);
@@ -50,9 +48,9 @@ export const TranslateScreen = () => {
     const runDanishPrompt = async (prompt) => { 
         if (openaiClient) {
             const response = await openaiClient.chat.completions.create({
-                model: "ft:gpt-3.5-turbo-0125:personal:medilingo:94WHfDoL",
+                model: "ft:gpt-3.5-turbo-0125:personal:medilingo:94Zh7J6M",
                 messages: [
-                    { role: "system", content: "Translating from Danish to Ukrainian for medical purposes" },
+                    { role: "system", content: "You have to translate from Danish to Ukranian for medical purposes" },
                     { role: "user", content: prompt },
                 ],
             });
@@ -66,9 +64,9 @@ export const TranslateScreen = () => {
     const runUkranianPrompt = async (prompt) => { 
         if (openaiClient) {
             const response = await openaiClient.chat.completions.create({
-                model: "ft:gpt-3.5-turbo-0125:personal:medilingo:94WHfDoL",
+                model: "ft:gpt-3.5-turbo-0125:personal:uktodk:9ENr7qy1",
                 messages: [
-                    { role: "system", content: "Translating from Ukrainian to Danish for medical purposes" },
+                    { role: "system", content: "You have to translate from Ukranian to Danish for medical purposes" },
                     { role: "user", content: prompt },
                 ],
             });
@@ -165,7 +163,6 @@ export const TranslateScreen = () => {
 
     const stopRecording = async () => {
         setIsRecording(false);
-        console.log('Recording stopped');
         await recording.stopAndUnloadAsync();
         const uri = recording.getURI(); 
         console.log('Recording stopped and stored at', uri);
@@ -180,97 +177,127 @@ export const TranslateScreen = () => {
         }
     };
 
-    // const sendAudioToServer = async (uri) => {
-    //     try {
-    //       const response = await fetch(uri);
-    //       const blob = await response.blob();
-    //       const file_name = 'audio-file.flac';
-          
-    //       const storageRef = ref(storage, `uploads/${file_name}`);
-    //       console.log('Uploading audio to', storageRef.fullPath);
-      
-    //       await uploadBytes(storageRef, blob);
-    //       console.log('Upload complete, attempting to fetch transcription');
-    //       fetchTranscription(file_name);
-    //     } catch (error) {
-    //       console.error('Error uploading file:', error);
-    //     }
-    // };
-
     const sendAudioToServer = async (uri) => {
         try {
             const response = await fetch(uri);
             const blob = await response.blob();
             const timestamp = new Date().getTime();
             const file_name = `${transcriptionLanguage}/${timestamp}-audio-file.flac`;
+            console.log("Transcription language:", transcriptionLanguage);
+            console.log('File name:', file_name);
           
             const storageRef = ref(storage, `transcriptions/${file_name}`);
             await uploadBytes(storageRef, blob);
-    
-            const functionUrl = `https://us-central1-medilingo-418907.cloudfunctions.net/transcribeAudio?filePath=transcriptions/${file_name}&languageCode=${transcriptionLanguage}`;
-            console.log('Fetching transcription from', functionUrl);
-            const transcriptionResponse = await fetch(functionUrl);
-            console.log('Transcription response:', transcriptionResponse);
-            const transcriptionData = await transcriptionResponse.json();
-            console.log(transcriptionData);
-    
-            setTranscript(transcriptionData.transcription);
+
+            fetchTranscription(file_name, transcriptionLanguage);
     
         } catch (error) {
             console.error('Error uploading file or fetching transcription:', error);
         }
     };
-    
-    
-      
-      
-    const fetchTranscription = async (fileName) => {
+
+    const fetchTranscription = async (fileName, transcriptionLanguage) => {
+        const txtFileRef = ref(storage, `transcriptions/${transcriptionLanguage}/transcriptions/${fileName}.wav_transcription.txt`);
+        console.log("Transcription file reference:", txtFileRef);
+        let attemptCount = 0;
+        const maxAttempts = 12;
+
         let loadingDots = '.';
-        setBottomInputText(loadingDots);
-    
+        transcriptionLanguage === 'uk-UA' ? setTopInputText(loadingDots) : setBottomInputText(loadingDots);
+
         const loadingInterval = setInterval(() => {
             loadingDots = loadingDots.length < 3 ? loadingDots + '.' : '.';
-            setBottomInputText(loadingDots);
-        }, 500);
+            transcriptionLanguage === 'uk-UA' ? setTopInputText(loadingDots) : setBottomInputText(loadingDots);
+        }, 700);
     
-        const txtFileRef = ref(storage, `uploads/${fileName}.wav_transcription.txt`);
-        
-        const checkTranscriptionExists = () => {
-            getDownloadURL(txtFileRef)
-                .then((url) => {
-                    fetch(url)
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.results && data.results.length > 0) {
-                                const transcript = data.results[0].alternatives[0].transcript;
-                                console.log('Transcription:', transcript);
-                                setBottomInputText(transcript);
-                                handleSubmitDoctor(transcript);
-                            } else {
-                                setBottomInputText('');
-                            }
-                            clearInterval(loadingInterval); 
-                            deleteTranscriptionFile(txtFileRef);
-                        });
-                })
-                .catch((error) => {
-                    console.log('Transcription not ready, checking again...');
-                    setTimeout(checkTranscriptionExists, 1000);
-                });
+        const checkTranscriptionAvailable = async () => {
+            attemptCount++;
+            if (attemptCount > maxAttempts) {
+                console.log('Maximum attempts reached. Stopping check.');
+                clearInterval(checkInterval);
+                transcriptionLanguage === 'uk-UA' ? setTopInputText('No transcription available') : setBottomInputText('Transkribering ikke tilgængelig');
+                clearInterval(loadingInterval); 
+                return;
+            }
+            try {
+                const url = await getDownloadURL(txtFileRef);
+                const response = await fetch(url);
+                const transcriptionData = await response.json();
+                
+                if (transcriptionData && transcriptionData.results.length > 0) {
+                    const transcript = transcriptionData.results.map(result => result.alternatives[0].transcript).join('\n');
+                    console.log('Transcription:', transcript);
+                    if (transcriptionLanguage === 'uk-UA') { 
+                        setTopInputText(transcript);
+                        console.log("Top input text:", transcript);
+                        handleSubmitPatient(transcript);
+                    }
+                    else { 
+                        setBottomInputText(transcript);
+                        console.log("Bottom input text:", transcript);
+                        handleSubmitDoctor(transcript);
+                    }
+                    clearInterval(checkInterval);
+                    deleteTranscriptionFile(txtFileRef);
+                    const audioFile = ref(storage, `transcriptions/${fileName}`);
+                    deleteTranscriptionFile(audioFile)
+
+                } else {
+                    console.log('Transcription file found but no results.');
+                    transcriptionLanguage === 'uk-UA' ? setTopInputText('Транскрипція недоступна') : setBottomInputText('Transkribering ikke tilgængelig');
+                    clearInterval(checkInterval);
+                }
+                clearInterval(loadingInterval); 
+            } catch (error) {
+                console.log('Transcription file not ready yet, checking again...');
+            }
         };
     
-        checkTranscriptionExists();
-    };    
+        let checkInterval = setInterval(checkTranscriptionAvailable, 1000);
+    };
+
+    const deleteTranscriptionFile = async (fileRef) => {
+        deleteObject(fileRef)
+            .then(() => {
+                console.log('File deleted successfully:', fileRef.fullPath);
+            })
+            .catch((error) => {
+                if (error.code === 'storage/object-not-found') {
+                    console.log('File does not exist, nothing to delete:', fileRef.fullPath);
+                } else {
+                    console.error('Error deleting file:', fileRef.fullPath, error);
+                }
+            });
+    };
+
+    const uploadToServer = async (uri) => {
+        try {
+          const response = await fetch(uri);
+          const blob = await response.blob();
+          const file_name = 'audio-file.flac';
+          
+          const storageRef = ref(storage, `uploads/${file_name}`);
+          console.log('Uploading audio to', storageRef.fullPath);
       
-      const deleteTranscriptionFile = (transcriptionRef) => {
-        deleteObject(transcriptionRef)
-          .then(() => {
-            console.log('Transcription file deleted successfully');
-          })
-          .catch((error) => {
-            console.error('Error deleting transcription file:', error);
-          });
-      };
+          await uploadBytes(storageRef, blob);
+          console.log('Upload complete, attempting to fetch transcription');
+          fetchTranscription(file_name);
+        } catch (error) {
+          console.error('Error uploading file:', error);
+        }
+    };
+
+    const getTranscription = async (fileName, transcriptionLanguage) => { 
+        const functionUrl = `https://us-central1-medilingo-418907.cloudfunctions.net/transcribeAudio?filePath=transcriptions/${fileName}&languageCode=${transcriptionLanguage}`;
+        console.log('Fetching transcription from', functionUrl);
+        const transcriptionResponse = await fetch(functionUrl);
+        if (!transcriptionResponse.ok) {
+            throw new Error('Failed to fetch transcription');
+        }
+        const transcriptionData = await transcriptionResponse.json();
+        console.log(transcriptionData);
+        setBottomInputText(transcriptionData.transcription);
+    };
       
 
     return (
@@ -312,7 +339,7 @@ export const TranslateScreen = () => {
                     blurOnSubmit={true}
                     multiline={true}
                     value={topInputText}
-                    // editable={false} 
+                    editable={false} 
                 />
             </TopContainer>
 
