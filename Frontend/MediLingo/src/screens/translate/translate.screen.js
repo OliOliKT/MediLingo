@@ -130,7 +130,7 @@ export const TranslateScreen = () => {
 
     const speakPatientInputText = () => {
         const options = {
-            volume: 1.0,
+            volume: 1.5,
             language: "uk",
         };
         Speech.speak(topInputText, options);
@@ -138,7 +138,7 @@ export const TranslateScreen = () => {
 
     const speakDoctorInputText = () => {
         const options = {
-            volume: 1.0,
+            volume: 1.5,
         };
         Speech.speak(bottomInputText, options);
     };
