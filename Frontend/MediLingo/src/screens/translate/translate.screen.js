@@ -150,6 +150,10 @@ export const TranslateScreen = () => {
                 allowsRecordingIOS: true,
                 playsInSilentModeIOS: true,
             }); 
+            const startSoundObject = new Audio.Sound();
+            await startSoundObject.loadAsync(require('./../../../assets/start.mp3'));
+            await startSoundObject.playAsync();
+
             const { recording } = await Audio.Recording.createAsync(
                 Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY
             );
@@ -169,11 +173,9 @@ export const TranslateScreen = () => {
         await Audio.setAudioModeAsync({
             allowsRecordingIOS: false,
         });
-        const soundObject = new Audio.Sound();
-        const asset = require('./../../../assets/emptySound.mp4');
-        await soundObject.loadAsync(asset);
-        await soundObject.playAsync();
-        await soundObject.unloadAsync()
+        const stopSoundObject = new Audio.Sound();
+        await stopSoundObject.loadAsync(require('./../../../assets/stop.mp3'));
+        await stopSoundObject.playAsync();
         sendAudioToServer(uri);
     };
     
