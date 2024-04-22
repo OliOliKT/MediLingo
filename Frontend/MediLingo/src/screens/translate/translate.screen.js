@@ -130,7 +130,7 @@ export const TranslateScreen = () => {
 
     const speakPatientInputText = () => {
         const options = {
-            volume: 1.5,
+            volume: 1.0,
             language: "uk",
         };
         Speech.speak(topInputText, options);
@@ -138,7 +138,7 @@ export const TranslateScreen = () => {
 
     const speakDoctorInputText = () => {
         const options = {
-            volume: 1.5,
+            volume: 1.0,
         };
         Speech.speak(bottomInputText, options);
     };
@@ -166,6 +166,10 @@ export const TranslateScreen = () => {
         await recording.stopAndUnloadAsync();
         const uri = recording.getURI(); 
         console.log('Recording stopped and stored at', uri);
+        await Audio.setAudioModeAsync({
+            allowsRecordingIOS: false,
+            playsInSilentModeIOS: false,
+        });
         sendAudioToServer(uri);
     };
     

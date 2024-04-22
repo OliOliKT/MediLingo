@@ -12,7 +12,16 @@ export const Headline = styled(Text)`
     font-weight: ${(props) => props.theme.fontWeights.bold};
     margin-top: ${(props) => props.theme.space[4]};
     margin-left: ${(props) => props.theme.space[3]};
-    margin-bottom: ${(props) => props.theme.space[3]};
+    margin-bottom: ${(props) => props.theme.space[2]};
+`;
+
+export const CategoryTitle = styled(Text)`
+    font-size: ${(props) => props.theme.fontSizes.body};
+    font-family: ${(props) => props.theme.fonts.body};
+    font-weight: ${(props) => props.theme.fontWeights.bold};
+    margin-top: ${(props) => props.theme.space[4]};
+    margin-left: ${(props) => props.theme.space[3]};
+    margin-bottom: ${(props) => props.theme.space[2]};
 `;
 
 export const PhrasesContent = styled.View`
@@ -28,7 +37,7 @@ export const PhraseDetails = styled.View`
 
 export const Phrase = styled(Text)`
     font-family: ${(props) => props.theme.fonts.body};
-    font-weight: ${(props) => props.theme.fontWeights.bold};
+    font-weight: ${(props) => props.theme.fontWeights.medium};
 `;
 
 export const ItemSeparator = styled.View`

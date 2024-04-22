@@ -9,7 +9,8 @@ import {
     PhraseDetails,
     Phrase,
     SafeArea,
-    Headline
+    Headline,
+    CategoryTitle
   } from "./prompts.styles";
 
 const departmentNameMapping = { 
@@ -23,32 +24,28 @@ const prompts = {
     categories: {
         general: { title: "Generelle spørgsmål" },
         allergies: { title: "Allergier" },
-        metal: { title: "Metal" },
-        kidney: { title: "Nyre" },
-        diabetes: { title: "Diabetes" },
-        kontrast: { title: "Kontrast" },
+        metal: { title: "Metal i kroppen" },
+        kidney: { title: "Kontrast kontraindikationer" },
+        kontrast: { title: "Kontrastsymptomer" },
         claustrophobia: { title: "Klaustrofobi" },
-        sedation: { title: "Bedøvelse" },
-        cathether: { title: "Kateter" },
+        sedation: { title: "Lokalbedøvelse" },
+        cathether: { title: "Pleuracentese" },
         pregnancy: { title: "Graviditet" },
-        biopsi: { title: "Biopsi" },
+        biopsi: { title: "Leverbiopsi" },
         ctScanning: { title: "CT-scanning" },
-        mriScanning: { title: "MR-scanning" },
-        ultrasound: { title: "Ultralyd" },
+        mriScanning: { title: "Hjerterelateret" },
+        ultrasound: { title: "Ultralydscanning" },
     },
     departments: {
-        ctScanning: ["general", "allergies", "kidney", "diabetes", "kontrast", "ctScanning"],
-        mriScanning: ["general", "metal", "claustrophobia", "pregnancy", "mriScanning"],
+        ctScanning: ["general", "allergies", "kidney", "kontrast", "ctScanning"],
+        mriScanning: ["general", "metal", "mriScanning", "claustrophobia", "pregnancy"],
         ultrasound: ["general", "biopsi", "sedation", "cathether",  "ultrasound"],
     },
     general: [
         "Hvad er dit fulde navn?",
         "Hvad er dit cpr-nummer?",
         "Hvad er din fødselsdato?",
-        "Hvad er din adresse?",
-        "Hvad er dit telefonnummer?",
-        "Hvad er din e-mail?",
-        "Hvad er din læges navn?",
+        "Hvor er du blevet henvist fra?",
     ],
     biopsi: [
         "Har du prøvet at få taget en vævsprøve før?",
@@ -84,8 +81,7 @@ const prompts = {
         "Har du haft nogen nyresygdomme?",
         "Er dine nyrer blevet opereret?",
         "Har du fået undersøgt din nyrefunktion?",
-    ],
-    diabetes: [
+        "Har du fået taget en blodprøve?",
         "Har du diabetes?",
         "Har du sukkersyge?",
     ],
@@ -96,6 +92,8 @@ const prompts = {
         "Det kan føles som om, du tisser, når du får kontrasten.",
         "Du kan få en metalsmag i munden af kontrasten.",
         "Har du prøvet at få jodholdig kontrast før?",
+        "Har du forhøjet blodtryk?",
+        "Tager du nogen form for medicin?",
     ],
     claustrophobia: [
         "Føler du dig klaustrofobisk i små rum?",
@@ -112,10 +110,15 @@ const prompts = {
         "Du skal have indsat et kateter i dine lunger.",
         "Vi kommer til at hjælpe dig med at kunne trække vejret igen ved at indsætte et kateter i dine lunger.",
         "Vi skal indsætte et kateter i dine lunger, så du kan trække vejret bedre.",
+        "Du kommer til at mærke et lille prik, for vi kan desværre ikke bedøve lungehinden.",
+        "Lungehinden kan desværre ikke bedøves, så du vil kunne mærke, når vi stikker igennem den",
+    ],
+    ascites: [
+        "Du har en masse væske i din mave, så vi kommer til at indsætte et dræn for at afhjælpe dig.",
+        "Vi skal indsætte et dræn i din mave for at fjerne væsken.",
+        
     ],
     ctScanning: [
-        "Har du fået taget en blodprøve?",
-        "Tager du nogen form for medicin?",
         "Scanneren vil fortælle dig undervejs, at du skal trække vejret ind og holde det. Efterfølgende vil den også fortælle, når du skal trække vejret normalt igen.",
         "Under scanningen skal du trække vejret ind og holde det i ca. 4-5 sekunder.",
         "Du skal kunne ligge fladt ned på ryggen under hele scanningen."
@@ -126,12 +129,9 @@ const prompts = {
         "Er du blevet opereret i hjertet?",
         "Er du nogensinde blevet opereret i hovedet?"],
     ultrasound: [
-        "Du kommer til at mærke et lille prik, for vi kan desværre ikke bedøve lungehinden.",
-        "Lungehinden kan desværre ikke bedøves, så du vil kunne mærke, når vi stikker igennem den",
-        "Du har en masse væske i din mave, så vi kommer til at indsætte et dræn for at afhjælpe dig.",
+        "Vi laver undersøgelsen sterilt, så det er meget vigtigt at du ikke rykker eller flytter dig undervejs, når vi stikker dig",
         "Er det muligt at du kan ligge på din venstre side under scanningen?",
         "Det er afgørende, at du ligger stille gennem hele scanningen.",
-        "Vi laver undersøgelsen sterilt, så det er meget vigtigt at du ikke rykker eller flytter dig undervejs, når vi stikker dig",
         "Det er vigtigt at du siger til, hvis du får det dårligt."]
 };
 
@@ -165,7 +165,7 @@ export const PromptsScreen = () => {
     const departmentCategories = prompts.departments[selectedDepartment];
     const departmentPrompts = departmentCategories.map(category => ({
         title: prompts.categories[category].title,
-        data: prompts[category].slice().sort((a, b) => a.localeCompare(b))
+        data: prompts[category]
     }));
     
     return (
@@ -178,7 +178,7 @@ export const PromptsScreen = () => {
                 keyExtractor={(item, index) => `${item.title}-${index}`}
                 renderItem={({ item }) => (
                     <>
-                        <Headline>{item.title}</Headline>
+                        <CategoryTitle>{item.title}:</CategoryTitle>
                         <FlatList
                             data={item.data}
                             keyExtractor={(_, i) => String(i)}
