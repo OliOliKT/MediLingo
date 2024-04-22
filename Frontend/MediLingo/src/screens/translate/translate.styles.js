@@ -48,8 +48,8 @@ export const DeleteButton = styled.TouchableOpacity`
 `;
 
 export const SoundButton = styled.TouchableOpacity`
-  height: ${screenHeight * 0.076}px;
-  width: ${screenHeight * 0.076}px;
+  height: ${screenHeight * 0.085}px;
+  width: ${screenHeight * 0.085}px;
   border-radius: 50px;
   background-color: ${(props) => props.theme.colors.blues.cyanBlue};
   justify-content: center;
