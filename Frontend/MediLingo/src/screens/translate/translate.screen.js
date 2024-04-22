@@ -168,8 +168,12 @@ export const TranslateScreen = () => {
         console.log('Recording stopped and stored at', uri);
         await Audio.setAudioModeAsync({
             allowsRecordingIOS: false,
-            playsInSilentModeIOS: false,
         });
+        const soundObject = new Audio.Sound();
+        const asset = require('./../../../assets/emptySound.mp4');
+        await soundObject.loadAsync(asset);
+        await soundObject.playAsync();
+        await soundObject.unloadAsync()
         sendAudioToServer(uri);
     };
     
@@ -327,13 +331,13 @@ export const TranslateScreen = () => {
                         <ActionButtonIcon name={isRecording && transcriptionLanguage === 'uk-UA' ? "square" : "mic"} reverse={true}/>
                     </MicButton>
 
-                    <SoundButton onPress={speakPatientInputText}>
+                    {/* <SoundButton onPress={speakPatientInputText}>
                         <Image 
                                 source={require('../../../assets/ukr_sound_icon.png')}
                                 resizeMode="cover"
                                 style={{ width: '55%', height: '55%', transform: [{ rotate: '180deg' }] }}
                         />
-                    </SoundButton>
+                    </SoundButton> */}
                 </ButtonContainer>
                 <View style={{ marginBottom: 10 }}></View>
                 <TranslateInput 
@@ -381,13 +385,13 @@ export const TranslateScreen = () => {
                         <ActionButtonIcon name={isRecording && transcriptionLanguage === 'da-DK' ? "square" : "mic"} />
                     </MicButton>
 
-                    <SoundButton onPress={speakDoctorInputText}>
+                    {/* <SoundButton onPress={speakDoctorInputText}>
                         <Image 
                             source={require('../../../assets/dk_sound_icon.png')}
                             resizeMode="cover"
                             style={{ width: '55%', height: '55%' }}
                         />
-                    </SoundButton>
+                    </SoundButton> */}
                 </ButtonContainer>
             </BottomContainer>
         </TranslateScreenContainer>
