@@ -1,4 +1,4 @@
-import { View, Image, Keyboard } from 'react-native';
+import { View, Image, Keyboard, ActivityIndicator } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import * as Speech from 'expo-speech';
 import { useAppContext } from '../../components/context';
@@ -22,58 +22,49 @@ import {
 export const TranslateScreen = () => {
     const [bottomInputText, setBottomInputText] = useState('');
     const [topInputText, setTopInputText] = useState('');
-
+    const [loading, setLoading] = useState(false);
     const [recording, setRecording] = useState();
+
     const [isRecording, setIsRecording] = useState(false);
-
-    const [transcriptionLanguage, setTranscriptionLanguage] = useState('');
-
     const [openaiClient, setOpenaiClient] = useState(null);
+    const [transcriptionLanguage, setTranscriptionLanguage] = useState('');
 
     const { addConversation, selectedPhrase, getCurrentTimeString, shouldUpdateBottomText, setShouldUpdateBottomText } = useAppContext();
 
+
     useEffect(() => {
         fetchApiKey().then(apiKey => {
-        if (apiKey) {
-            const config = new OpenAI({
-            apiKey: apiKey.trim(),
-            });
-
-            const client = new OpenAI(config);
-            setOpenaiClient(client);
-        }
+            if (apiKey) {
+                const config = new OpenAI({ apiKey: apiKey.trim() });
+                const client = new OpenAI(config);
+                setOpenaiClient(client);
+            }
         });
     }, []);
 
-    const runDanishPrompt = async (prompt) => { 
+    const runDanishPrompt = async (prompt) => {
         if (openaiClient) {
             const response = await openaiClient.chat.completions.create({
                 model: "ft:gpt-3.5-turbo-0125:personal:medilingo:94Zh7J6M",
                 messages: [
-                    { role: "system", content: "You have to translate from Danish to Ukranian for medical purposes" },
+                    { role: "system", content: "You are a medical translator. Your task is to translate the following text from Danish to Ukrainian for use in a radiology department. Ensure the translation is accurate, preserves the original meaning, and maintains a formal and professional tone. If the text is ambiguous, nonsensical, or cannot be reasonably translated, respond with: 'Teksten kan ikke oversættes meningsfuldt.' Do not guess or create information." },
                     { role: "user", content: prompt },
                 ],
             });
-        
-            console.log('Response:', response);
-            const completionText = response.choices[0].message.content;
-            return completionText;
+            return response.choices[0].message.content;
         }
     };
 
-    const runUkranianPrompt = async (prompt) => { 
+    const runUkrainianPrompt = async (prompt) => {
         if (openaiClient) {
             const response = await openaiClient.chat.completions.create({
                 model: "ft:gpt-3.5-turbo-0125:personal:uktodk:9ENr7qy1",
                 messages: [
-                    { role: "system", content: "You have to translate from Ukranian to Danish for medical purposes" },
+                    { role: "system", content: "You are a medical translator. Your task is to translate the following text from Ukrainian to Danish for use in a radiology department. Ensure the translation is accurate, preserves the original meaning, and maintains a formal and professional tone. If the text is ambiguous, nonsensical, or cannot be reasonably translated, respond with: 'Teksten kan ikke oversættes meningsfuldt.' Do not guess or create information." },
                     { role: "user", content: prompt },
                 ],
             });
-        
-            console.log('Response:', response);
-            const completionText = response.choices[0].message.content;
-            return completionText;
+            return response.choices[0].message.content;
         }
     };
 
@@ -86,8 +77,8 @@ export const TranslateScreen = () => {
     }, [selectedPhrase, shouldUpdateBottomText]);
     
     const deleteText = () => {
-        setBottomInputText("");
-        setTopInputText("");
+        setBottomInputText('');
+        setTopInputText('');
         Keyboard.dismiss();
     };
 
@@ -95,38 +86,39 @@ export const TranslateScreen = () => {
         const inputText = input.nativeEvent && input.nativeEvent.text ? input.nativeEvent.text : input;
 
         if (inputText) {
-            addConversation({ patient: false, phrase: inputText, time: getCurrentTimeString()});
-            console.log('Bottom input text:', inputText);
+            addConversation({ patient: false, phrase: inputText, time: getCurrentTimeString() });
+            setLoading(true);
             try {
                 const translatedText = await runDanishPrompt(inputText);
-                console.log("Translated text:", translatedText);
                 setTopInputText(translatedText);
             } catch (error) {
-                console.error("Error getting translation:", error);
+                console.error('Error getting translation:', error);
+            } finally {
+                setLoading(false);
             }
+        } else {
+            setTopInputText('');
         }
-        else {
-            setTopInputText("");
-        }
-    }
+    };
 
     const handleSubmitPatient = async (input) => {
         const inputText = input.nativeEvent && input.nativeEvent.text ? input.nativeEvent.text : input;
+
         if (inputText) {
-            addConversation({ patient: true, phrase: inputText, time: getCurrentTimeString()});
-            console.log('Top input text:', inputText);
+            addConversation({ patient: true, phrase: inputText, time: getCurrentTimeString() });
+            setLoading(true);
             try {
-                const translatedText = await runUkranianPrompt(inputText);
-                console.log("Translated text:", translatedText);
+                const translatedText = await runUkrainianPrompt(inputText);
                 setBottomInputText(translatedText);
             } catch (error) {
-                console.error("Error getting translation:", error);
+                console.error('Error getting translation:', error);
+            } finally {
+                setLoading(false);
             }
+        } else {
+            setBottomInputText('');
         }
-        else {
-            setBottomInputText("");
-        }
-    }
+    };
 
     const speakPatientInputText = () => {
         const options = {
@@ -163,6 +155,7 @@ export const TranslateScreen = () => {
 
     const stopRecording = async () => {
         setIsRecording(false);
+        setLoading(true);
         await recording.stopAndUnloadAsync();
         const uri = recording.getURI(); 
         console.log('Recording stopped and stored at', uri);
@@ -193,6 +186,7 @@ export const TranslateScreen = () => {
     
         } catch (error) {
             console.error('Error uploading file or fetching transcription:', error);
+            setLoading(false);
         }
     };
 
@@ -202,12 +196,7 @@ export const TranslateScreen = () => {
         let attemptCount = 0;
         const maxAttempts = 12;
 
-        let loadingDots = '.';
-        transcriptionLanguage === 'uk-UA' ? setTopInputText(loadingDots) : setBottomInputText(loadingDots);
-
         const loadingInterval = setInterval(() => {
-            loadingDots = loadingDots.length < 3 ? loadingDots + '.' : '.';
-            transcriptionLanguage === 'uk-UA' ? setTopInputText(loadingDots) : setBottomInputText(loadingDots);
         }, 700);
     
         const checkTranscriptionAvailable = async () => {
@@ -217,6 +206,7 @@ export const TranslateScreen = () => {
                 clearInterval(checkInterval);
                 transcriptionLanguage === 'uk-UA' ? setTopInputText('No transcription available') : setBottomInputText('Transkribering ikke tilgængelig');
                 clearInterval(loadingInterval); 
+                setLoading(false);
                 return;
             }
             try {
@@ -241,11 +231,13 @@ export const TranslateScreen = () => {
                     deleteTranscriptionFile(txtFileRef);
                     const audioFile = ref(storage, `transcriptions/${fileName}`);
                     deleteTranscriptionFile(audioFile)
+                    setLoading(false);
 
                 } else {
                     console.log('Transcription file found but no results.');
                     transcriptionLanguage === 'uk-UA' ? setTopInputText('Транскрипція недоступна') : setBottomInputText('Transkribering ikke tilgængelig');
                     clearInterval(checkInterval);
+                    setLoading(false);
                 }
                 clearInterval(loadingInterval); 
             } catch (error) {
@@ -269,39 +261,26 @@ export const TranslateScreen = () => {
                 }
             });
     };
-
-    const uploadToServer = async (uri) => {
-        try {
-          const response = await fetch(uri);
-          const blob = await response.blob();
-          const file_name = 'audio-file.flac';
-          
-          const storageRef = ref(storage, `uploads/${file_name}`);
-          console.log('Uploading audio to', storageRef.fullPath);
-      
-          await uploadBytes(storageRef, blob);
-          console.log('Upload complete, attempting to fetch transcription');
-          fetchTranscription(file_name);
-        } catch (error) {
-          console.error('Error uploading file:', error);
-        }
-    };
-
-    const getTranscription = async (fileName, transcriptionLanguage) => { 
-        const functionUrl = `https://us-central1-medilingo-418907.cloudfunctions.net/transcribeAudio?filePath=transcriptions/${fileName}&languageCode=${transcriptionLanguage}`;
-        console.log('Fetching transcription from', functionUrl);
-        const transcriptionResponse = await fetch(functionUrl);
-        if (!transcriptionResponse.ok) {
-            throw new Error('Failed to fetch transcription');
-        }
-        const transcriptionData = await transcriptionResponse.json();
-        console.log(transcriptionData);
-        setBottomInputText(transcriptionData.transcription);
-    };
       
 
     return (
         <TranslateScreenContainer>
+            {loading && (
+                <View style={{ 
+                    position: 'absolute', 
+                    top: 50, 
+                    left: 0, 
+                    right: 0, 
+                    bottom: 0, 
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)', 
+                    justifyContent: 'center', 
+                    alignItems: 'center',
+                    zIndex: 10 
+                }}>
+                    <ActivityIndicator size="large" color="#ffffff" />
+                </View>
+            )}
+            
             <TopContainer>
                 <ButtonContainer>
                     <SoundButton onPress={speakDoctorInputText}>
@@ -332,32 +311,32 @@ export const TranslateScreen = () => {
                     </SoundButton>
                 </ButtonContainer>
                 <View style={{ marginBottom: 10 }}></View>
-                <TranslateInput 
+                <TranslateInput
                     reverse={true}
                     onChangeText={(text) => setTopInputText(text)}
                     onSubmitEditing={() => handleSubmitPatient(topInputText)}
                     blurOnSubmit={true}
                     multiline={true}
                     value={topInputText}
-                    editable={false} 
+                    editable={false}
                 />
             </TopContainer>
 
             {(topInputText || bottomInputText) && (
                 <DeleteButton onPress={deleteText}>
-                    <ActionButtonIcon name={"close"} />
+                    <ActionButtonIcon name={'close'} />
                 </DeleteButton>
             )}
 
-            <BottomContainer>
-                <TranslateInput 
+                <BottomContainer>
+                <TranslateInput
                     onChangeText={(text) => setBottomInputText(text)}
                     onSubmitEditing={() => handleSubmitDoctor(bottomInputText)}
                     multiline={true}
                     blurOnSubmit={true}
                     value={bottomInputText}
                 />
-                <View style={{ marginBottom: 10 }}></View>
+                <View style={{ marginBottom: 10 }} />
                 <ButtonContainer>
                     <SoundButton onPress={speakPatientInputText}>
                     <Image 

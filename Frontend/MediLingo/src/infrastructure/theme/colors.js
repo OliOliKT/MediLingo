@@ -8,6 +8,7 @@ export const colors = {
       chineseSilver: "#C8C8C8",
       silver: "#E0E0E0",
       ghostWhite: "#FAFAFC",
+      backgroundWhite: "#F2F2F2",
     },
     blues: {
       greyCyanBlue: "#4A8BA7",

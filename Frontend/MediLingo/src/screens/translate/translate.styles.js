@@ -44,7 +44,7 @@ export const DeleteButton = styled.TouchableOpacity`
   shadow-opacity: 0.15;
   shadow-radius: 3.84px;
   elevation: 5;
-  zIndex: 20;
+  zIndex: 2;
 `;
 
 export const SoundButton = styled.TouchableOpacity`

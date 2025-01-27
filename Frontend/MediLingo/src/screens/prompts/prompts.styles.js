@@ -28,10 +28,20 @@ export const PhraseDetails = styled.View`
 
 export const Phrase = styled(Text)`
     font-family: ${(props) => props.theme.fonts.body};
-    font-weight: ${(props) => props.theme.fontWeights.bold};
+    font-weight: ${(props) => props.theme.fontWeights.medium};
 `;
 
 export const ItemSeparator = styled.View`
     background-color: ${(props) => props.theme.colors.blacks.eerieBlack};
     height: ${StyleSheet.hairlineWidth}px;
+`;
+
+export const SectionHeader = styled(Text)`
+    font-size: ${(props) => props.theme.fontSizes.body};
+    font-family: ${(props) => props.theme.fonts.body};
+    font-weight: ${(props) => props.theme.fontWeights.bold};
+    padding-left: ${(props) => props.theme.space[3]};
+    padding-bottom: ${(props) => props.theme.space[2]};
+    padding-top: ${(props) => props.theme.space[3]};
+    background-color: ${(props) => props.theme.colors.whites.backgroundWhite};
 `;
